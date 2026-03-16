@@ -625,3 +625,24 @@ th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size:
 .hidden {
     display: none !important;
 }
+
+.clickable-stat {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.clickable-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.click-hint {
+    display: block;
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-top: 5px;
+    font-style: italic;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    padding-top: 5px;
+}

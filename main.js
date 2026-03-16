@@ -10,6 +10,8 @@ let todayAttendance = [];
 let allStaff = [];
 let todayStaffAttendance = [];
 let currentMode = 'MURID'; 
+let currentMuridStatusFilter = 'ALL'; // ALL, HADIR, LEWAT, ABSENT
+let currentStaffStatusFilter = 'ALL'; // ALL, ACTIVE, DONE, ABSENT
 
 // Utility
 function id(name) { return document.getElementById(name); }
@@ -296,7 +298,6 @@ function renderMuridTable() {
     const classDropdown = id('class-dropdown');
     const searchInput = id('student-search-input');
     const tbody = id('murid-list-body');
-    
     if (!classDropdown || !tbody) return;
 
     const selectedClass = classDropdown.value;
@@ -307,38 +308,45 @@ function renderMuridTable() {
         (s.name.toLowerCase().includes(searchTerm) || s.barcode.includes(searchTerm))
     );
 
-    // 1. Sort by barcode
+    let hadirCount = 0;
+    let lewatCount = 0;
+    let rowsHtml = '';
+
+    // Sort by barcode
     filteredStudents.sort((a, b) => (a.barcode || "").localeCompare(b.barcode || ""));
 
-    let hadirCount = 0;
-    let htmlContent = ''; // Build string first for better performance
-
-    filteredStudents.forEach((s, index) => {
+    filteredStudents.forEach((s) => {
         const record = todayAttendance.find(a => a.student_id === s.id);
         const isHadir = !!record;
-        if (isHadir) hadirCount++;
+        let isLewat = false;
 
-        let statusBadge = '';
         if (isHadir) {
+            hadirCount++;
             const scanTime = new Date(record.timestamp);
-            // Set late limit to 7:30 AM on the day of the scan
             const limit = new Date(record.timestamp);
             limit.setHours(7, 30, 0, 0);
-            
-            statusBadge = scanTime > limit 
-                ? '<span class="badge warning">Lewat</span>' 
-                : '<span class="badge success">Hadir</span>';
-        } else {
-            statusBadge = '<span class="badge danger">Tidak Hadir</span>';
+            if (scanTime > limit) {
+                isLewat = true;
+                lewatCount++;
+            }
         }
+
+        // Apply Clickable Filter Logic
+        if (currentMuridStatusFilter === 'HADIR' && !isHadir) return;
+        if (currentMuridStatusFilter === 'LEWAT' && !isLewat) return;
+        if (currentMuridStatusFilter === 'ABSENT' && isHadir) return;
+
+        const statusBadge = isHadir 
+            ? (isLewat ? '<span class="badge warning">Lewat</span>' : '<span class="badge success">Hadir</span>')
+            : '<span class="badge danger">Tidak Hadir</span>';
 
         const timeDisplay = record 
             ? new Date(record.timestamp).toLocaleTimeString('ms-MY', {hour: '2-digit', minute:'2-digit'}) 
             : '-';
 
-        htmlContent += `
+        rowsHtml += `
             <tr>
-                <td>${index + 1}</td>
+                <td>${tbody.children.length + 1}</td>
                 <td>${s.name}</td>
                 <td><code class="barcode-text">${s.barcode}</code></td>
                 <td>${timeDisplay}</td>
@@ -347,13 +355,18 @@ function renderMuridTable() {
         `;
     });
 
-    tbody.innerHTML = htmlContent;
-
-    // Update stats with safety checks
+    tbody.innerHTML = rowsHtml;
     if (id('m-total')) id('m-total').innerText = filteredStudents.length;
     if (id('m-hadir')) id('m-hadir').innerText = hadirCount;
+    if (id('m-lewat')) id('m-lewat').innerText = lewatCount;
     if (id('m-absent')) id('m-absent').innerText = filteredStudents.length - hadirCount;
 }
+
+// Global function to trigger filtering from cards
+window.filterByStatus = (status) => {
+    currentMuridStatusFilter = (currentMuridStatusFilter === status) ? 'ALL' : status;
+    renderMuridTable();
+};
 
 // --- GURU/AKP LOGIC ---
 async function loadGuruData() {
@@ -378,33 +391,51 @@ async function loadGuruData() {
     renderGuruTable();
 }
 
-function renderGuruTable(filter = 'SEMUA') {
+function renderGuruTable(roleFilter = 'SEMUA') {
     const tbody = id('guru-list-body');
     if (!tbody) return;
 
     let stats = { total: 0, active: 0, done: 0, absent: 0 };
     let htmlContent = '';
+    let visibleIndex = 1;
 
-    const filteredStaff = allStaff.filter(s => filter === 'SEMUA' || s.staff_type === filter);
+    // Filter by Role (GURU/AKP) first
+    const filteredByRole = allStaff.filter(s => roleFilter === 'SEMUA' || s.staff_type === roleFilter);
 
-    filteredStaff.forEach((s, index) => {
+    filteredByRole.forEach((s) => {
         const record = todayStaffAttendance.find(a => a.teacher_id === s.id);
         
         let statusText = "Tidak Hadir";
         let statusClass = "danger";
         let lateIndicator = "";
         let workHours = "-";
-        stats.total++;
+        
+        // Determine status for stats
+        const isHadir = !!record;
+        const isDone = !!(record && record.clock_out);
+        const isActive = isHadir && !isDone;
+        const isAbsent = !isHadir;
 
+        // Update stats counters
+        stats.total++;
+        if (isActive) stats.active++;
+        if (isDone) stats.done++;
+        if (isAbsent) stats.absent++;
+
+        // Status Filtering Logic: Skip rendering if it doesn't match the clicked card filter
+        if (currentStaffStatusFilter === 'ACTIVE' && !isActive) return;
+        if (currentStaffStatusFilter === 'DONE' && !isDone) return;
+        if (currentStaffStatusFilter === 'ABSENT' && !isAbsent) return;
+
+        // Processing row data
         if (record) {
             if (record.clock_in > "07:30:00") {
                 lateIndicator = `<span class="badge late-flash" style="margin-left:8px;">LEWAT</span>`;
             }
 
-            if (record.clock_out) {
+            if (isDone) {
                 statusText = "Tamat Bertugas";
                 statusClass = "success";
-                stats.done++;
                 
                 const start = new Date(`${record.date} ${record.clock_in}`);
                 const end = new Date(`${record.date} ${record.clock_out}`);
@@ -415,15 +446,12 @@ function renderGuruTable(filter = 'SEMUA') {
             } else {
                 statusText = "Sedang Bertugas";
                 statusClass = "info";
-                stats.active++;
             }
-        } else {
-            stats.absent++;
         }
 
         htmlContent += `
             <tr>
-                <td>${index + 1}</td>
+                <td>${visibleIndex++}</td>
                 <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'"></td>
                 <td>
                     ${s.honorific_title || ''} ${s.name} 
@@ -438,13 +466,29 @@ function renderGuruTable(filter = 'SEMUA') {
         `;
     });
 
-    tbody.innerHTML = htmlContent;
+    tbody.innerHTML = htmlContent || '<tr><td colspan="8" style="text-align:center;">Tiada rekod untuk status ini.</td></tr>';
 
+    // Update UI Stats
     if (id('g-total')) id('g-total').innerText = stats.total;
     if (id('g-active')) id('g-active').innerText = stats.active;
     if (id('g-done')) id('g-done').innerText = stats.done;
     if (id('g-absent')) id('g-absent').innerText = stats.absent;
 }
+
+/**
+ * Filter staff table by status (Active, Done, Absent)
+ * Triggered by clicking the statistic cards
+ */
+window.filterStaffByStatus = (status) => {
+    // If clicking the same filter again, reset to ALL
+    currentStaffStatusFilter = (currentStaffStatusFilter === status) ? 'ALL' : status;
+    
+    // Maintain current role filter if applicable
+    const activeRoleBtn = document.querySelector('#guru-filter-group .filter-btn.active');
+    const role = activeRoleBtn ? activeRoleBtn.dataset.filter : 'SEMUA';
+    
+    renderGuruTable(role);
+};
 
 // --- PENGURUSAN DATA (MANAGEMENT) ---
 let currentManageView = 'MURID'; 

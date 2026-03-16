@@ -56,9 +56,20 @@
             <section id="murid-section" class="content-section">
                 <div class="stats-grid">
                     <div class="card">Jumlah: <span id="m-total">0</span></div>
-                    <div class="card success">Hadir: <span id="m-hadir">0</span></div>
-                    <div class="card danger">Tidak Hadir: <span id="m-absent">0</span></div>
+                    <div class="card success clickable-stat" onclick="filterByStatus('HADIR')">
+                        Hadir: <span id="m-hadir">0</span>
+                        <small class="click-hint">Klik untuk Senarai Nama</small>
+                    </div>
+                    <div class="card warning clickable-stat" onclick="filterByStatus('LEWAT')">
+                        Lewat: <span id="m-lewat">0</span>
+                        <small class="click-hint">Klik untuk Senarai Nama</small>
+                    </div>
+                    <div class="card danger clickable-stat" onclick="filterByStatus('ABSENT')">
+                        Tidak Hadir: <span id="m-absent">0</span>
+                        <small class="click-hint">Klik untuk Senarai Nama</small>
+                    </div>
                 </div>
+                </section>
 
                 <div class="controls">
                     <div class="search-group">
@@ -90,10 +101,20 @@
             <section id="guru-section" class="content-section hidden">
                 <div class="stats-grid">
                     <div class="card">Jumlah Staf: <span id="g-total">0</span></div>
-                    <div class="card info">Sedang Bertugas: <span id="g-active">0</span></div> 
-                    <div class="card success">Tamat Bertugas: <span id="g-done">0</span></div> 
-                    <div class="card danger">Tidak Hadir: <span id="g-absent">0</span></div> 
+                    <div class="card info clickable-stat" onclick="filterStaffByStatus('ACTIVE')">
+                        Sedang Bertugas: <span id="g-active">0</span>
+                        <small class="click-hint">Klik untuk Senarai Nama</small>
+                    </div> 
+                    <div class="card success clickable-stat" onclick="filterStaffByStatus('DONE')">
+                        Tamat Bertugas: <span id="g-done">0</span>
+                        <small class="click-hint">Klik untuk Senarai Nama</small>
+                    </div> 
+                    <div class="card danger clickable-stat" onclick="filterStaffByStatus('ABSENT')">
+                        Tidak Hadir: <span id="g-absent">0</span>
+                        <small class="click-hint">Klik untuk Senarai Nama</small>
+                    </div> 
                 </div>
+                </section>
 
                 <div class="controls">
                     <div class="filter-group" id="guru-filter-group">
