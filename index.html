@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HadirSekolah Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="login-container" class="auth-wrapper">
+        <form id="login-form">
+            <h2>Log Masuk HadirSekolah</h2>
+            <input type="email" id="email" placeholder="Email Sekolah" required>
+            <input type="password" id="password" placeholder="Kata Laluan" required>
+            <button type="submit">Log Masuk</button>
+        </form>
+    </div>
+
+    <div id="dashboard-container" class="hidden">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1 id="school-name-display">HadirSekolah</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li class="nav-item active" data-section="murid-section">👤 Murid</li>
+                    <li class="nav-item" data-section="guru-section">👨‍🏫 Guru/AKP</li>
+                    <li class="nav-item" data-section="manage-section">⚙️ Pengurusan Data</li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logout-btn">Log Keluar</button>
+            </div>
+        </aside>
+
+        <main class="content">
+            <header class="top-bar">
+                <div class="global-filters">
+                    <div class="date-control">
+                        <label for="date-picker"><i class="fas fa-calendar-day"></i> Tarikh:</label>
+                        <input type="date" id="date-picker" class="date-input">
+                        <button id="btn-today" class="btn-today">Hari Ini</button>
+                    </div>
+                </div>
+
+                <div class="user-info">
+                    <span id="admin-name">Memuatkan...</span>
+                    <small id="admin-role"></small>
+                </div>
+            </header>
+
+            <section id="murid-section" class="content-section">
+                <div class="stats-grid">
+                    <div class="card">Jumlah: <span id="m-total">0</span></div>
+                    <div class="card success">Hadir: <span id="m-hadir">0</span></div>
+                    <div class="card danger">Tidak Hadir: <span id="m-absent">0</span></div>
+                </div>
+
+                <div class="controls">
+                    <div class="search-group">
+                        <select id="class-dropdown">
+                            <option value="">Pilih Kelas</option>
+                        </select>
+                        <input type="text" id="student-search-input" placeholder="Cari Nama/Barcode...">
+                    </div>
+                    <div class="export-group">
+                        <button id="btn-export-murid-pdf" class="btn-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+                        <button id="btn-export-murid-csv" class="btn-csv"><i class="fas fa-file-csv"></i> CSV</button>
+                    </div>
+                </div>
+ 
+                <table id="table-murid">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Nama</th>
+                            <th>Barcode</th>
+                            <th>Masa Imbas</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="murid-list-body"></tbody>
+                </table>
+            </section>
+
+            <section id="guru-section" class="content-section hidden">
+                <div class="stats-grid">
+                    <div class="card">Jumlah Staf: <span id="g-total">0</span></div>
+                    <div class="card info">Sedang Bertugas: <span id="g-active">0</span></div> 
+                    <div class="card success">Tamat Bertugas: <span id="g-done">0</span></div> 
+                    <div class="card danger">Tidak Hadir: <span id="g-absent">0</span></div> 
+                </div>
+
+                <div class="controls">
+                    <div class="filter-group" id="guru-filter-group">
+                        <button class="filter-btn active" data-filter="SEMUA">SEMUA</button>
+                        <button class="filter-btn" data-filter="GURU">GURU</button>
+                        <button class="filter-btn" data-filter="AKP">AKP</button>
+                    </div>
+                    <div class="export-group">
+                        <button id="btn-export-guru-pdf" class="btn-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+                        <button id="btn-export-guru-csv" class="btn-csv"><i class="fas fa-file-csv"></i> CSV</button>
+                    </div>
+                </div>
+
+                <table id="table-guru">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Gambar</th>
+                            <th>Nama</th>
+                            <th>Barkod</th>
+                            <th>Masuk</th>
+                            <th>Keluar</th>
+                            <th>Jam Bekerja</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="guru-list-body"></tbody>
+                </table>
+            </section>
+
+            <section id="manage-section" class="content-section hidden">
+                <div class="section-header-manage">
+                    <div class="main-title">
+                        <h2>Pengurusan Data Sekolah</h2>
+                        <p>Urus maklumat murid dan kakitangan sekolah secara berpusat.</p>
+                    </div>
+                    
+                    <div class="manage-action-buttons">
+                        <button id="open-add-murid" class="btn-primary-strike"><i class="fas fa-plus"></i> Murid Baru</button>
+                        <button id="open-add-staf" class="btn-secondary-strike"><i class="fas fa-plus"></i> Staf Baru</button>
+                        
+                        <div class="button-divider"></div>
+
+                        <button class="btn-import" onclick="handleCSVImportClick()">
+                            <i class="fas fa-file-import"></i> Mass Import (CSV)
+                        </button>
+                        <i class="fas fa-question-circle import-help-icon" onclick="showImportHelp()" title="Bantuan Format CSV"></i>
+
+                        <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
+
+                        <div class="template-group">
+                            <button onclick="downloadTemplate('MURID')" class="btn-template-sm">
+                                <i class="fas fa-download"></i> Template Murid
+                            </button>
+                            <button onclick="downloadTemplate('STAFF')" class="btn-template-sm">
+                                <i class="fas fa-download"></i> Template Staf
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="excel-container card">
+                    <div class="excel-toolbar">
+                        <div class="view-selector">
+                            <button class="view-tab active" id="view-murid-tab" onclick="switchManageView('MURID')">Senarai Murid</button>
+                            <button class="view-tab" id="view-staf-tab" onclick="switchManageView('STAFF')">Senarai Staf</button>
+                        </div>
+                        
+                        <div class="excel-filters">
+                            <div id="filter-murid-group">
+                                <select id="manage-class-dropdown" onchange="loadManagementList()">
+                                    <option value="">Semua Kelas</option>
+                                </select>
+                            </div>
+                            <div id="filter-staf-group" class="hidden">
+                                <select id="manage-staff-type-filter" onchange="loadManagementList()">
+                                    <option value="ALL">Semua Jawatan</option>
+                                    <option value="GURU">Guru sahaja</option>
+                                    <option value="AKP">AKP sahaja</option>
+                                </select>
+                            </div>
+                            <input type="text" id="manage-search-input" placeholder="Cari Nama/Barcode..." onkeyup="loadManagementList()">
+                        </div>
+                    </div>
+
+                    <div class="excel-table-wrapper">
+                        <div id="manage-list-container"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="data-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">Tambah Rekod</h3>
+            <form id="data-form">
+                <div class="form-group">
+                    <input type="text" id="form-name" placeholder="Nama Penuh" required>
+                    <input type="text" id="form-barcode" placeholder="Assign Barcode (e.g. STU-101)" required>
+                </div>
+                
+                <div id="student-only-fields" class="form-group">
+                    <input type="number" id="form-standard" placeholder="Tahun (1-6)">
+                    <input type="text" id="form-class" placeholder="Nama Kelas (e.g. Ibnu Sina)">
+                </div>
+
+                <div id="staff-only-fields" class="form-group hidden">
+                    <select id="form-staff-type">
+                        <option value="GURU">GURU</option>
+                        <option value="AKP">AKP</option>
+                    </select>
+                    <input type="text" id="form-title" placeholder="Gelaran (e.g. Encik/Puan)">
+                </div>
+
+                <div class="form-group">
+                    <label>Pratinjau Gambar:</label>
+                    <div id="image-preview-container" class="image-preview-box">
+                        <img id="image-preview" src="" alt="Preview" class="hidden">
+                        <div id="preview-placeholder">Tiada Gambar Dipilih</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Pilih Gambar:</label>
+                    <input type="file" id="form-image" accept="image/*">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">Simpan Rekod</button>
+                    <button type="button" id="close-modal" class="btn-cancel">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html>
