@@ -43,7 +43,9 @@
                     <div class="date-control">
                         <label for="date-picker"><i class="fas fa-calendar-day"></i> Tarikh:</label>
                         <input type="date" id="date-picker" class="date-input">
-                        <button id="btn-today" class="btn-today">Hari Ini</button>
+                        <button id="btn-today" class="btn-today">
+                            <i class="fas fa-history"></i> Hari Ini
+                        </button>
                     </div>
                 </div>
 
@@ -54,22 +56,28 @@
             </header>
 
             <section id="murid-section" class="content-section">
-                <div class="stats-grid">
-                    <div class="card">Jumlah: <span id="m-total">0</span></div>
-                    <div class="card success clickable-stat" onclick="filterByStatus('HADIR')">
-                        Hadir: <span id="m-hadir">0</span>
+                <div class="stats-grid clickable-stats">
+                    <div class="card stat-clickable" onclick="openStatsPopup('TOTAL', 'MURID')">
                         <small class="click-hint">Klik untuk Senarai Nama</small>
+                        <div class="stat-value"><span id="m-total">0</span></div>
+                        <div class="stat-label">Jumlah Murid</div>
                     </div>
-                    <div class="card warning clickable-stat" onclick="filterByStatus('LEWAT')">
-                        Lewat: <span id="m-lewat">0</span>
+                    <div class="card success stat-clickable" onclick="openStatsPopup('HADIR', 'MURID')">
                         <small class="click-hint">Klik untuk Senarai Nama</small>
+                        <div class="stat-value"><span id="m-hadir">0</span></div>
+                        <div class="stat-label">Hadir</div>
                     </div>
-                    <div class="card danger clickable-stat" onclick="filterByStatus('ABSENT')">
-                        Tidak Hadir: <span id="m-absent">0</span>
+                    <div class="card warning stat-clickable" onclick="openStatsPopup('LEWAT', 'MURID')" style="border-left: 5px solid #f39c12;">
                         <small class="click-hint">Klik untuk Senarai Nama</small>
+                        <div class="stat-value" style="color: #f39c12;"><span id="m-lewat">0</span></div>
+                        <div class="stat-label">Lewat</div>
+                    </div>
+                    <div class="card danger stat-clickable" onclick="openStatsPopup('ABSENT', 'MURID')">
+                        <small class="click-hint">Klik untuk Senarai Nama</small>
+                        <div class="stat-value"><span id="m-absent">0</span></div>
+                        <div class="stat-label">Tidak Hadir</div>
                     </div>
                 </div>
-                </section>
 
                 <div class="controls">
                     <div class="search-group">
@@ -99,28 +107,43 @@
             </section>
 
             <section id="guru-section" class="content-section hidden">
-                <div class="stats-grid">
-                    <div class="card">Jumlah Staf: <span id="g-total">0</span></div>
-                    <div class="card info clickable-stat" onclick="filterStaffByStatus('ACTIVE')">
-                        Sedang Bertugas: <span id="g-active">0</span>
-                        <small class="click-hint">Klik untuk Senarai Nama</small>
-                    </div> 
-                    <div class="card success clickable-stat" onclick="filterStaffByStatus('DONE')">
-                        Tamat Bertugas: <span id="g-done">0</span>
-                        <small class="click-hint">Klik untuk Senarai Nama</small>
-                    </div> 
-                    <div class="card danger clickable-stat" onclick="filterStaffByStatus('ABSENT')">
-                        Tidak Hadir: <span id="g-absent">0</span>
-                        <small class="click-hint">Klik untuk Senarai Nama</small>
-                    </div> 
-                </div>
-                </section>
+                <div class="stats-grid clickable-stats">
+                        <div class="card stat-clickable" onclick="openStatsPopup('TOTAL', 'STAFF')">
+                            <small class="click-hint">Klik untuk Senarai Nama</small>
+                            <div class="stat-value"><span id="g-total">0</span></div>
+                            <div class="stat-label">Jumlah Guru/AKP</div>
+                        </div> 
+
+                        <div class="card info stat-clickable" onclick="openStatsPopup('ACTIVE', 'STAFF')">
+                            <small class="click-hint">Klik untuk Senarai Nama</small>
+                            <div class="stat-value"><span id="g-active">0</span></div>
+                            <div class="stat-label">Sedang Bertugas</div>
+                        </div> 
+
+                        <div class="card success stat-clickable" onclick="openStatsPopup('DONE', 'STAFF')">
+                            <small class="click-hint">Klik untuk Senarai Nama</small>
+                            <div class="stat-value"><span id="g-done">0</span></div>
+                            <div class="stat-label">Tamat Bertugas</div>
+                        </div> 
+
+                        <div class="card danger stat-clickable" onclick="openStatsPopup('ABSENT', 'STAFF')">
+                            <small class="click-hint">Klik untuk Senarai Nama</small>
+                            <div class="stat-value"><span id="g-absent">0</span></div>
+                            <div class="stat-label">Tidak Hadir</div>
+                        </div> 
+                    </div>
 
                 <div class="controls">
                     <div class="filter-group" id="guru-filter-group">
-                        <button class="filter-btn active" data-filter="SEMUA">SEMUA</button>
-                        <button class="filter-btn" data-filter="GURU">GURU</button>
-                        <button class="filter-btn" data-filter="AKP">AKP</button>
+                        <button class="filter-btn active" data-filter="SEMUA">
+                            <i class="fas fa-users"></i> SEMUA
+                        </button>
+                        <button class="filter-btn" data-filter="GURU">
+                            <i class="fas fa-chalkboard-teacher"></i> GURU
+                        </button>
+                        <button class="filter-btn" data-filter="AKP">
+                            <i class="fas fa-user-cog"></i> AKP
+                        </button>
                     </div>
                     <div class="export-group">
                         <button id="btn-export-guru-pdf" class="btn-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
@@ -144,62 +167,76 @@
                     <tbody id="guru-list-body"></tbody>
                 </table>
             </section>
-
             <section id="manage-section" class="content-section hidden">
                 <div class="section-header-manage">
                     <div class="main-title">
-                        <h2>Pengurusan Data Sekolah</h2>
+                        <h2><i class="fas fa-database"></i> Pengurusan Data Sekolah</h2>
                         <p>Urus maklumat murid dan kakitangan sekolah secara berpusat.</p>
                     </div>
                     
                     <div class="manage-action-buttons">
-                        <button id="open-add-murid" class="btn-primary-strike"><i class="fas fa-plus"></i> Murid Baru</button>
-                        <button id="open-add-staf" class="btn-secondary-strike"><i class="fas fa-plus"></i> Staf Baru</button>
-                        
+                        <div class="action-group">
+                            <button id="open-add-murid" class="btn-primary-strike">
+                                <i class="fas fa-user-plus"></i> Murid Baru
+                            </button>
+                            <button id="open-add-staf" class="btn-secondary-strike">
+                                <i class="fas fa-chalkboard-teacher"></i> Staf Baru
+                            </button>
+                        </div>
+
                         <div class="button-divider"></div>
 
-                        <button class="btn-import" onclick="handleCSVImportClick()">
-                            <i class="fas fa-file-import"></i> Mass Import (CSV)
-                        </button>
-                        <i class="fas fa-question-circle import-help-icon" onclick="showImportHelp()" title="Bantuan Format CSV"></i>
-
-                        <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
+                        <div class="import-wrapper">
+                            <button class="btn-import" onclick="handleCSVImportClick()">
+                                <i class="fas fa-file-upload"></i> Mass Import (CSV)
+                            </button>
+                            <i class="fas fa-question-circle import-help-icon" onclick="showImportHelp()" title="Bantuan Format CSV"></i>
+                        </div>
 
                         <div class="template-group">
                             <button onclick="downloadTemplate('MURID')" class="btn-template-sm">
-                                <i class="fas fa-download"></i> Template Murid
+                                <i class="fas fa-file-download"></i> Template Murid
                             </button>
                             <button onclick="downloadTemplate('STAFF')" class="btn-template-sm">
-                                <i class="fas fa-download"></i> Template Staf
+                                <i class="fas fa-file-download"></i> Template Staf
                             </button>
                         </div>
+                        <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
                     </div>
                 </div>
 
                 <div class="excel-container card">
                     <div class="excel-toolbar">
                         <div class="view-selector">
-                            <button class="view-tab active" id="view-murid-tab" onclick="switchManageView('MURID')">Senarai Murid</button>
-                            <button class="view-tab" id="view-staf-tab" onclick="switchManageView('STAFF')">Senarai Staf</button>
+                            <button class="view-tab active" id="view-murid-tab" onclick="switchManageView('MURID')">
+                                <i class="fas fa-user-friends"></i> Murid
+                            </button>
+                            <button class="view-tab" id="view-staf-tab" onclick="switchManageView('STAFF')">
+                                <i class="fas fa-user-tie"></i> Staf
+                            </button>
                         </div>
                         
                         <div class="excel-filters">
-                            <div id="filter-murid-group">
+                            <div id="filter-murid-group" class="filter-wrapper">
+                                <i class="fas fa-filter"></i>
                                 <select id="manage-class-dropdown" onchange="loadManagementList()">
                                     <option value="">Semua Kelas</option>
                                 </select>
                             </div>
-                            <div id="filter-staf-group" class="hidden">
+                            <div id="filter-staf-group" class="filter-wrapper hidden">
+                                <i class="fas fa-id-badge"></i>
                                 <select id="manage-staff-type-filter" onchange="loadManagementList()">
                                     <option value="ALL">Semua Jawatan</option>
                                     <option value="GURU">Guru sahaja</option>
                                     <option value="AKP">AKP sahaja</option>
                                 </select>
                             </div>
-                            <input type="text" id="manage-search-input" placeholder="Cari Nama/Barcode..." onkeyup="loadManagementList()">
+                            <div class="search-wrapper">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="manage-search-input" placeholder="Cari Nama/Barcode..." onkeyup="loadManagementList()">
+                            </div>
                         </div>
                     </div>
-
                     <div class="excel-table-wrapper">
                         <div id="manage-list-container"></div>
                     </div>
@@ -210,44 +247,83 @@
 
     <div id="data-modal" class="modal hidden">
         <div class="modal-content">
-            <h3 id="modal-title">Tambah Rekod</h3>
+            <div class="modal-header">
+                <h3 id="modal-title"><i class="fas fa-edit"></i> Tambah Rekod</h3>
+                <button type="button" class="close-modal-btn" id="close-modal-x">&times;</button>
+            </div>
             <form id="data-form">
-                <div class="form-group">
-                    <input type="text" id="form-name" placeholder="Nama Penuh" required>
-                    <input type="text" id="form-barcode" placeholder="Assign Barcode (e.g. STU-101)" required>
-                </div>
-                
-                <div id="student-only-fields" class="form-group">
-                    <input type="number" id="form-standard" placeholder="Tahun (1-6)">
-                    <input type="text" id="form-class" placeholder="Nama Kelas (e.g. Ibnu Sina)">
-                </div>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Nama Penuh</label>
+                        <input type="text" id="form-name" placeholder="Contoh: Ahmad Bin Ali" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Barcode / ID</label>
+                        <input type="text" id="form-barcode" placeholder="Contoh: STU-101" required>
+                    </div>
 
-                <div id="staff-only-fields" class="form-group hidden">
-                    <select id="form-staff-type">
-                        <option value="GURU">GURU</option>
-                        <option value="AKP">AKP</option>
-                    </select>
-                    <input type="text" id="form-title" placeholder="Gelaran (e.g. Encik/Puan)">
-                </div>
+                    <div id="student-only-fields" class="form-row-contents">
+                        <div class="form-group">
+                            <label>Tahun</label>
+                            <input type="number" id="form-standard" placeholder="1-6" min="1" max="6">
+                        </div>
+                        <div class="form-group">
+                            <label>Nama Kelas</label>
+                            <input type="text" id="form-class" placeholder="Contoh: Ibnu Sina">
+                        </div>
+                    </div>
 
-                <div class="form-group">
-                    <label>Pratinjau Gambar:</label>
-                    <div id="image-preview-container" class="image-preview-box">
-                        <img id="image-preview" src="" alt="Preview" class="hidden">
-                        <div id="preview-placeholder">Tiada Gambar Dipilih</div>
+                    <div id="staff-only-fields" class="form-row-contents hidden">
+                        <div class="form-group">
+                            <label>Kategori</label>
+                            <select id="form-staff-type">
+                                <option value="GURU">GURU</option>
+                                <option value="AKP">AKP</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Gelaran</label>
+                            <input type="text" id="form-title" placeholder="Contoh: Encik/Puan">
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Pilih Gambar:</label>
-                    <input type="file" id="form-image" accept="image/*">
+                <div class="image-upload-section">
+                    <div class="upload-controls">
+                        <label><i class="fas fa-camera"></i> Gambar Profil</label>
+                        <input type="file" id="form-image" accept="image/*" class="custom-file-input">
+                    </div>
+                    <div id="image-preview-container" class="image-preview-box">
+                        <img id="image-preview" src="" alt="Preview" class="hidden">
+                        <div id="preview-placeholder">
+                            <i class="fas fa-user-circle"></i>
+                            <span>Pratinjau Gambar</span>
+                        </div>
+                    </div>
                 </div>
-                
+
                 <div class="form-actions">
-                    <button type="submit" class="btn-save">Simpan Rekod</button>
-                    <button type="button" id="close-modal" class="btn-cancel">Batal</button>
+                    <button type="submit" class="btn-save"><i class="fas fa-check"></i> Simpan Rekod</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="stats-modal" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="stats-modal-title">Senarai Nama</h3>
+                <button type="button" class="close-btn" onclick="window.closeStatsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="popup-toolbar">
+                    <button onclick="window.exportStatsPDF()" class="btn-pdf-sm"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button onclick="window.exportStatsCSV()" class="btn-csv-sm"><i class="fas fa-file-csv"></i> CSV</button>
+                </div>
+                <div id="stats-modal-content" class="table-scroll">
+                    </div>
+            </div>
         </div>
     </div>
 

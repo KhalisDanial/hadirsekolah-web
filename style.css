@@ -448,38 +448,6 @@ th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size:
 .btn-icon.delete { color: #e74c3c; }
 .btn-icon:hover { transform: scale(1.2); }
 
-/* STRIKING BUTTONS */
-.btn-primary-strike {
-    background: #27ae60; /* Bold Green */
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 800;
-    font-size: 15px;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
-    transition: 0.3s ease;
-}
-
-.btn-secondary-strike {
-    background: #2980b9; /* Bold Blue */
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 800;
-    font-size: 15px;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(41, 128, 185, 0.3);
-    transition: 0.3s ease;
-}
-
-.btn-primary-strike:hover, .btn-secondary-strike:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.1);
-}
-
 /* EXCEL TABLE STYLE */
 .excel-style-table {
     width: 100%;
@@ -527,40 +495,6 @@ th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size:
 .btn-edit-small { color: #f39c12; background: none; border: none; cursor: pointer; font-size: 16px; margin-right: 10px;}
 .btn-delete-small { color: #e74c3c; background: none; border: none; cursor: pointer; font-size: 16px; }
 
-.manage-action-buttons {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-top: 10px;
-}
-
-.button-divider {
-    width: 1px;
-    height: 24px;
-    background-color: #cbd5e0;
-    margin: 0 8px;
-}
-
-.btn-import {
-    background-color: #2f855a;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.btn-template-sm {
-    background: #edf2f7;
-    border: 1px solid #e2e8f0;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    cursor: pointer;
-}
-
-.btn-template-sm:hover { background: #e2e8f0; }
 
 .image-preview-box {
     width: 100%;
@@ -626,23 +560,488 @@ th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size:
     display: none !important;
 }
 
-.clickable-stat {
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+/* --- Attendance Stats & Clickable Cards --- */
+
+.stats-grid.clickable-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, min-minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-clickable {
     position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem !important;
 }
 
-.clickable-stat:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+/* Hover effect: Card lifts and shadow deepens */
+.stat-clickable:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    background-color: #fcfcfc;
 }
 
+/* The "Klik untuk Senarai Nama" label */
 .click-hint {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0.5rem 0;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #555;
+    font-weight: 500;
+}
+
+/* Specific Style for Lewat (Orange) */
+.card.warning {
+    background-color: #fff9f0; /* Very light orange tint */
+}
+
+/* --- Stats Modal Styling --- */
+
+.modal.hidden {
+    display: none;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.popup-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    justify-content: flex-end;
+}
+
+/* Small Export Buttons inside Popup */
+.btn-pdf-sm, .btn-csv-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-pdf-sm { background-color: #e74c3c; }
+.btn-csv-sm { background-color: #27ae60; }
+
+.btn-pdf-sm:hover, .btn-csv-sm:hover { opacity: 0.9; }
+
+.table-scroll {
+    overflow-x: auto;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+/* Close button style */
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.close-btn:hover { color: #000; }
+
+/* Warna Kontainer Murid */
+.card.success {
+    background-color: #e8f5e9; /* Hijau sangat muda */
+    border-left: 5px solid #2ecc71;
+}
+.card.success .stat-value { color: #27ae60; }
+
+.card.warning {
+    background-color: #fff9f0; /* Oranye sangat muda */
+    border-left: 5px solid #f39c12;
+}
+.card.warning .stat-value { color: #d35400; }
+
+.card.danger {
+    background-color: #ffebee; /* Merah sangat muda */
+    border-left: 5px solid #e74c3c;
+}
+.card.danger .stat-value { color: #c0392b; }
+
+/* Warna Kontainer Guru/AKP */
+.card.info {
+    background-color: #e3f2fd; /* Biru sangat muda */
+    border-left: 5px solid #3498db;
+}
+.card.info .stat-value { color: #2980b9; }
+
+/* Hover effect untuk semua stat-clickable agar konsisten */
+.stat-clickable:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    filter: brightness(0.98); /* Efek sedikit gelap saat ditekan */
+}
+
+/* --- Global Button Enhancements --- */
+
+/* 1. "Hari Ini" Button */
+.btn-today {
+    background-color: #34495e;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+.btn-today:hover { background-color: #2c3e50; }
+
+/* 2. PDF & CSV Export Buttons */
+.btn-pdf, .btn-csv {
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    transition: transform 0.1s, opacity 0.2s;
+}
+
+.btn-pdf { background-color: #e74c3c; } /* Red for PDF */
+.btn-csv { background-color: #27ae60; } /* Green for CSV */
+
+.btn-pdf:hover, .btn-csv:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* 3. Guru/AKP/Semua Filter Buttons */
+.filter-group {
+    background: #f1f3f5;
+    padding: 5px;
+    border-radius: 8px;
+    display: inline-flex;
+    gap: 5px;
+}
+
+.filter-btn {
+    border: none;
+    background: transparent;
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.filter-btn.active {
+    background: white;
+    color: #2980b9;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.filter-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.5);
+}
+
+/* Container Layout */
+
+
+/* Modal Improvements */
+.modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+    max-width: 550px;
+}
+
+.modal-header {
+    background: #f8f9fa;
+    padding: 15px 25px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.image-preview-box span { font-size: 0.6rem; color: #999; }
+
+/* --- Pengurusan Data Section Modernization --- */
+
+.section-header-manage {
+    margin-bottom: 25px;
+}
+
+.manage-action-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    background: #ffffff;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    border: 1px solid #f0f0f0;
+}
+
+/* Grouping for a cleaner look */
+.action-group, .import-wrapper, .template-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.button-divider {
+    width: 1px;
+    height: 30px;
+    background: #e0e0e0;
+    margin: 0 10px;
+}
+
+/* Buttons - Modern Minimalist */
+.btn-primary-strike, .btn-secondary-strike {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+}
+
+.btn-primary-strike { background: #3498db; }
+.btn-secondary-strike { background: #9b59b6; }
+
+.btn-primary-strike:hover, .btn-secondary-strike:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    filter: brightness(1.05);
+}
+
+.btn-import {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-import:hover {
+    background: #e9ecef;
+}
+
+.btn-template-sm {
+    background: transparent;
+    border: 1px dashed #ced4da;
+    color: #6c757d;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.btn-template-sm:hover {
+    border-color: #3498db;
+    color: #3498db;
+    background: #f0f7ff;
+}
+
+/* Toolbar & Filters */
+.excel-toolbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fafafa;
+}
+
+.view-selector {
+    background: #ececec;
+    padding: 4px;
+    border-radius: 8px;
+    display: flex;
+}
+
+.view-tab {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #7f8c8d;
+    background: transparent;
+    transition: 0.2s;
+}
+
+.view-tab.active {
+    background: white;
+    color: #2c3e50;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Search & Select Wrappers */
+.filter-wrapper, .search-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.filter-wrapper i, .search-wrapper i {
+    position: absolute;
+    left: 12px;
+    color: #bdc3c7;
+    font-size: 0.85rem;
+}
+
+.excel-filters select, .excel-filters input {
+    padding: 8px 12px 8px 35px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border 0.2s;
+}
+
+.excel-filters input:focus { border-color: #3498db; }
+
+/* --- Data Modal Modernization --- */
+
+.modal-content {
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    background: #ffffff;
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 25px;
+}
+
+.form-group label {
     display: block;
-    font-size: 0.7rem;
-    opacity: 0.8;
-    margin-top: 5px;
-    font-style: italic;
-    border-top: 1px solid rgba(255,255,255,0.2);
-    padding-top: 5px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #34495e;
+    font-size: 0.85rem;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #dcdde1;
+    border-radius: 8px;
+    background: #fdfdfd;
+}
+
+.image-upload-section {
+    grid-column: span 2;
+    background: #f9f9fb;
+    border: 1px solid #f0f0f2;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.image-preview-box {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.image-preview-box i { font-size: 2.5rem; color: #ccc; }
+
+.close-modal-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
+    line-height: 1;
+    color: #95a5a6;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+    padding: 0 5px;
+}
+
+.close-modal-btn:hover {
+    color: #e74c3c; /* Tukar merah apabila hover */
+    transform: scale(1.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end; /* Letakkan butang Simpan di sebelah kanan */
+    padding: 20px;
+    background: #fdfdfd;
+    border-top: 1px solid #eee;
+}
+
+.btn-save {
+    min-width: 150px;
+    /* Gunakan gaya butang sedia ada anda */
 }
