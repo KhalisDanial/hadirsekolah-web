@@ -533,20 +533,88 @@ window.downloadTemplate = (type) => {
 
 window.switchManageView = async (view) => {
     currentManageView = view;
-    document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
     
+    // 1. Update Tab UI
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
     const activeTabId = view === 'MURID' ? 'view-murid-tab' : 'view-staf-tab';
     const activeTab = id(activeTabId);
     if (activeTab) activeTab.classList.add('active');
     
+    // 2. Toggle Filter Groups
     const muridGroup = id('filter-murid-group');
     const stafGroup = id('filter-staf-group');
-    
     if (muridGroup) muridGroup.classList.toggle('hidden', view !== 'MURID');
     if (stafGroup) stafGroup.classList.toggle('hidden', view !== 'STAFF');
+
+    // 3. Update Dynamic Buttons
+    const actionContainer = id('dynamic-manage-actions');
+    if (actionContainer) {
+        if (view === 'MURID') {
+            actionContainer.innerHTML = `
+                <button class="btn-primary-strike" onclick="openAddMuridModal()">
+                    <i class="fas fa-user-plus"></i> Murid Baru
+                </button>
+                <div class="import-wrapper">
+                    <button class="btn-import" onclick="handleCSVImportClick()">
+                        <i class="fas fa-file-upload"></i> Mass Import (CSV)
+                    </button>
+                    <i class="fas fa-question-circle import-help-icon" onclick="showImportHelp()" title="Bantuan Format Murid"></i>
+                </div>
+                <button onclick="downloadTemplate('MURID')" class="btn-template-sm">
+                    <i class="fas fa-file-download"></i> Template Murid
+                </button>
+            `;
+        } else {
+            actionContainer.innerHTML = `
+                <button class="btn-secondary-strike" onclick="openAddStafModal()">
+                    <i class="fas fa-chalkboard-teacher"></i> Staf Baru
+                </button>
+                <div class="import-wrapper">
+                    <button class="btn-import" onclick="handleCSVImportClick()">
+                        <i class="fas fa-file-upload"></i> Mass Import (CSV)
+                    </button>
+                    <i class="fas fa-question-circle import-help-icon" onclick="showImportHelp()" title="Bantuan Format Staf"></i>
+                </div>
+                <button onclick="downloadTemplate('STAFF')" class="btn-template-sm">
+                    <i class="fas fa-file-download"></i> Template Staf
+                </button>
+            `;
+        }
+    }
     
+    // 4. Load Data
     if (view === 'MURID') await populateManageClassDropdown();
     loadManagementList();
+};
+
+// --- MODAL TRIGGER FUNCTIONS ---
+
+window.openAddMuridModal = () => {
+    editingId = null;
+    currentMode = 'MURID';
+    id('data-form')?.reset();
+    
+    // Update Modal UI
+    id('modal-title').innerHTML = '<i class="fas fa-user-plus"></i> Tambah Murid Baru';
+    id('student-only-fields')?.classList.remove('hidden');
+    id('staff-only-fields')?.classList.add('hidden');
+    
+    // Show the modal
+    id('data-modal')?.classList.remove('hidden');
+};
+
+window.openAddStafModal = () => {
+    editingId = null;
+    currentMode = 'STAFF';
+    id('data-form')?.reset();
+    
+    // Update Modal UI
+    id('modal-title').innerHTML = '<i class="fas fa-chalkboard-teacher"></i> Tambah Staf Baru';
+    id('student-only-fields')?.classList.add('hidden');
+    id('staff-only-fields')?.classList.remove('hidden');
+    
+    // Show the modal
+    id('data-modal')?.classList.remove('hidden');
 };
 
 async function populateManageClassDropdown() {

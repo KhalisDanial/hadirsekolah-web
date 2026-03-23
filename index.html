@@ -174,35 +174,8 @@
                         <p>Urus maklumat murid dan kakitangan sekolah secara berpusat.</p>
                     </div>
                     
-                    <div class="manage-action-buttons">
-                        <div class="action-group">
-                            <button id="open-add-murid" class="btn-primary-strike">
-                                <i class="fas fa-user-plus"></i> Murid Baru
-                            </button>
-                            <button id="open-add-staf" class="btn-secondary-strike">
-                                <i class="fas fa-chalkboard-teacher"></i> Staf Baru
-                            </button>
+                    <div id="dynamic-manage-actions" class="manage-action-buttons">
                         </div>
-
-                        <div class="button-divider"></div>
-
-                        <div class="import-wrapper">
-                            <button class="btn-import" onclick="handleCSVImportClick()">
-                                <i class="fas fa-file-upload"></i> Mass Import (CSV)
-                            </button>
-                            <i class="fas fa-question-circle import-help-icon" onclick="showImportHelp()" title="Bantuan Format CSV"></i>
-                        </div>
-
-                        <div class="template-group">
-                            <button onclick="downloadTemplate('MURID')" class="btn-template-sm">
-                                <i class="fas fa-file-download"></i> Template Murid
-                            </button>
-                            <button onclick="downloadTemplate('STAFF')" class="btn-template-sm">
-                                <i class="fas fa-file-download"></i> Template Staf
-                            </button>
-                        </div>
-                        <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
-                    </div>
                 </div>
 
                 <div class="excel-container card">
