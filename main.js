@@ -60,8 +60,11 @@ window.deleteSelectedRecords = async (mode) => {
     }));
 
     if (records.length === 0) return;
-    if (!confirm(`Padam ${records.length} rekod terpilih? Gambar profil juga akan dipadamkan secara kekal.`)) return;
+    // if (!confirm(`Padam ${records.length} rekod terpilih? Gambar profil juga akan dipadamkan secara kekal.`)) return;
 
+    const batchWarning = `Padam ${records.length} rekod terpilih? Semua DATA KEHADIRAN berkaitan dan gambar profil akan dipadamkan secara kekal.`;
+    if (!confirm(batchWarning)) return;
+    
     // --- CAPTURE CURRENT FILTER ---
     const savedClassFilter = id('manage-class-dropdown')?.value || "";
     const savedStaffFilter = id('manage-staff-type-filter')?.value || "ALL";
@@ -947,7 +950,8 @@ window.editRecord = async (type, recordId) => {
 };
 
 window.deleteRecord = async (table, recordId) => {
-    if (!confirm("Adakah anda pasti mahu memadam rekod ini? Gambar dalam storan juga akan dipadamkan.")) return;
+    const warningMsg = "Adakah anda pasti? Semua REKOD KEHADIRAN dan GAMBAR profil bagi individu ini juga akan dipadamkan secara kekal.";
+    if (!confirm(warningMsg)) return;
 
     try {
         // 1. Fetch record details for storage cleanup
