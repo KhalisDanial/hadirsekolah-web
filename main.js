@@ -543,13 +543,13 @@ window.switchManageView = async (view) => {
     const activeTab = id(activeTabId);
     if (activeTab) activeTab.classList.add('active');
     
-    // 2. Toggle Filter Groups
+    // 2. Toggle Filter Groups (Updated to match your new HTML IDs)
     const muridGroup = id('filter-murid-group');
     const stafGroup = id('filter-staf-group');
     if (muridGroup) muridGroup.classList.toggle('hidden', view !== 'MURID');
     if (stafGroup) stafGroup.classList.toggle('hidden', view !== 'STAFF');
 
-    // 3. Update Dynamic Buttons
+    // 3. Update Dynamic Buttons (Injected into the Row under Search)
     const actionContainer = id('dynamic-manage-actions');
     if (actionContainer) {
         if (view === 'MURID') {
@@ -585,8 +585,15 @@ window.switchManageView = async (view) => {
         }
     }
     
-    // 4. Load Data
-    if (view === 'MURID') await populateManageClassDropdown();
+    // 4. Load Data & Dropdowns
+    if (view === 'MURID') {
+        await populateManageClassDropdown();
+    } else {
+        // Ensure staff filter defaults to ALL when switching
+        const staffFilter = id('manage-staff-type-filter');
+        if (staffFilter) staffFilter.value = 'ALL';
+    }
+    
     loadManagementList();
 };
 

@@ -1045,3 +1045,26 @@ th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size:
     min-width: 150px;
     /* Gunakan gaya butang sedia ada anda */
 }
+
+.toolbar-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px; /* Space between filters and buttons */
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.manage-action-buttons-row {
+    display: flex;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee; /* Light line to separate search from actions */
+}
+
+.action-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+}

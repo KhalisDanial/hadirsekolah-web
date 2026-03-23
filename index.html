@@ -173,43 +173,46 @@
                         <h2><i class="fas fa-database"></i> Pengurusan Data Sekolah</h2>
                         <p>Urus maklumat murid dan kakitangan sekolah secara berpusat.</p>
                     </div>
-                    
-                    <div id="dynamic-manage-actions" class="manage-action-buttons">
-                        </div>
                 </div>
 
                 <div class="excel-container card">
                     <div class="excel-toolbar">
-                        <div class="view-selector">
-                            <button class="view-tab active" id="view-murid-tab" onclick="switchManageView('MURID')">
-                                <i class="fas fa-user-friends"></i> Murid
-                            </button>
-                            <button class="view-tab" id="view-staf-tab" onclick="switchManageView('STAFF')">
-                                <i class="fas fa-user-tie"></i> Staf
-                            </button>
+                        <div class="toolbar-top-row">
+                            <div class="view-selector">
+                                <button class="view-tab active" id="view-murid-tab" onclick="switchManageView('MURID')">
+                                    <i class="fas fa-user-friends"></i> Murid
+                                </button>
+                                <button class="view-tab" id="view-staf-tab" onclick="switchManageView('STAFF')">
+                                    <i class="fas fa-user-tie"></i> Staf
+                                </button>
+                            </div>
+
+                            <div class="excel-filters">
+                                <div id="filter-murid-group" class="filter-wrapper">
+                                    <i class="fas fa-filter"></i>
+                                    <select id="manage-class-dropdown" onchange="loadManagementList()">
+                                        <option value="">Semua Kelas</option>
+                                    </select>
+                                </div>
+                                <div id="filter-staf-group" class="filter-wrapper hidden">
+                                    <i class="fas fa-id-badge"></i>
+                                    <select id="manage-staff-type-filter" onchange="loadManagementList()">
+                                        <option value="ALL">Semua Jawatan</option>
+                                        <option value="GURU">Guru sahaja</option>
+                                        <option value="AKP">AKP sahaja</option>
+                                    </select>
+                                </div>
+                                <div class="search-wrapper">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="manage-search-input" placeholder="Cari Nama/Barcode..." onkeyup="loadManagementList()">
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="excel-filters">
-                            <div id="filter-murid-group" class="filter-wrapper">
-                                <i class="fas fa-filter"></i>
-                                <select id="manage-class-dropdown" onchange="loadManagementList()">
-                                    <option value="">Semua Kelas</option>
-                                </select>
+
+                        <div id="dynamic-manage-actions" class="manage-action-buttons-row">
                             </div>
-                            <div id="filter-staf-group" class="filter-wrapper hidden">
-                                <i class="fas fa-id-badge"></i>
-                                <select id="manage-staff-type-filter" onchange="loadManagementList()">
-                                    <option value="ALL">Semua Jawatan</option>
-                                    <option value="GURU">Guru sahaja</option>
-                                    <option value="AKP">AKP sahaja</option>
-                                </select>
-                            </div>
-                            <div class="search-wrapper">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="manage-search-input" placeholder="Cari Nama/Barcode..." onkeyup="loadManagementList()">
-                            </div>
-                        </div>
                     </div>
+
                     <div class="excel-table-wrapper">
                         <div id="manage-list-container"></div>
                     </div>
