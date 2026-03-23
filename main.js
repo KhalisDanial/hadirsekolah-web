@@ -385,8 +385,8 @@ function renderMuridTable() {
     // --- ENTIRE CONTAINER CLICK LOGIC ---
     const setupCardClick = (statId, title, data) => {
         const target = id(statId);
-        // Find the outer box with class 'stat-card'
-        const container = target?.closest('.stat-card');
+        // Change '.stat-card' to '.stat-item' to match your HTML
+        const container = target?.closest('.stat-item'); 
         
         if (container) {
             container.style.cursor = 'pointer';
@@ -510,7 +510,8 @@ function renderGuruTable(roleFilter = 'SEMUA') {
     // --- ENTIRE CONTAINER CLICK LOGIC ---
     const setupGuruClick = (statId, title, data) => {
         const target = id(statId);
-        const container = target?.closest('.stat-card');
+        // Change '.stat-card' to '.stat-item' to match your HTML
+        const container = target?.closest('.stat-item'); 
         
         if (container) {
             container.style.cursor = 'pointer';
