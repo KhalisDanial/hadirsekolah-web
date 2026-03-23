@@ -12,6 +12,7 @@ let todayStaffAttendance = [];
 let currentMode = 'MURID'; 
 let currentMuridStatusFilter = 'ALL'; // ALL, HADIR, LEWAT, ABSENT
 let currentStaffStatusFilter = 'ALL'; // ALL, ACTIVE, DONE, ABSENT
+let schoolStartTime = "07:30:00"; // Default fallback
 
 // Utility
 function id(name) { return document.getElementById(name); }
@@ -159,6 +160,7 @@ async function refreshStaffTypeDropdown() {
 }
 
 async function initializeDashboard(userId) {
+    // 1. Fetch Profile and joined School data
     const { data: profile, error } = await supabase
         .from('profiles')
         .select('*, schools(*)')
@@ -171,10 +173,17 @@ async function initializeDashboard(userId) {
         return;
     }
 
+    // 2. Set Global Variables from Database
     currentSchoolId = profile.school_id;
     currentSchoolCode = profile.schools?.school_code || "UNKNOWN";
-    console.log(`Authenticated: ${profile.full_name} | School: ${currentSchoolCode} | ID: ${currentSchoolId}`);
     
+    // Dynamically set the late threshold (defaulting to 07:30:00 if column is empty)
+    schoolStartTime = profile.schools?.start_time || "07:30:00";
+    
+    console.log(`Authenticated: ${profile.full_name}`);
+    console.log(`School: ${currentSchoolCode} (Start Time: ${schoolStartTime})`);
+    
+    // 3. Update UI Header Info
     const schoolDisplay = id('school-name-display');
     const adminName = id('admin-name');
     const adminRole = id('admin-role');
@@ -183,6 +192,7 @@ async function initializeDashboard(userId) {
     if (adminName) adminName.innerText = profile.full_name || "Admin";
     if (adminRole) adminRole.innerText = profile.role || "Penyelaras";
 
+    // 4. Date Picker Logic
     const datePicker = id('date-picker');
     const btnToday = id('btn-today');
     const todayISO = new Date().toISOString().split('T')[0];
@@ -205,9 +215,11 @@ async function initializeDashboard(userId) {
         };
     }
 
+    // 5. Switch View from Login to Dashboard
     id('login-container')?.classList.add('hidden');
     id('dashboard-container')?.classList.remove('hidden');
 
+    // 6. Initial Data Load
     await refreshClassDropdown();
     await refreshStaffTypeDropdown();
     await fetchMuridAttendance();
@@ -215,7 +227,7 @@ async function initializeDashboard(userId) {
     if (typeof loadGuruData === 'function') await loadGuruData();
     if (typeof setupRealtime === 'function') setupRealtime();
 
-    // Image Preview logic
+    // 7. Image Preview logic
     const formImage = id('form-image');
     if (formImage) {
         formImage.onchange = (e) => {
@@ -240,9 +252,9 @@ async function initializeDashboard(userId) {
         };
     }
 
-    // --- CONSOLIDATED MODAL CLOSING LOGIC ---
+    // 8. --- CONSOLIDATED MODAL CLOSING LOGIC ---
     const closeModalAction = () => {
-        // Updated to match your index.html ID
+        // Match IDs in index.html
         id('student-modal')?.classList.add('hidden');
         
         // Reset image previews
@@ -254,10 +266,10 @@ async function initializeDashboard(userId) {
         }
         if (placeholder) placeholder.classList.remove('hidden');
         
-        // Updated to match your index.html ID
+        // Match IDs in index.html
         id('student-form')?.reset();
         
-        // Reset global edit state if it exists
+        // Reset global edit state
         if (typeof editingId !== 'undefined') editingId = null; 
     };
 
@@ -313,8 +325,31 @@ async function fetchMuridAttendance() {
         return;
     }
 
-    todayAttendance = (data || []).sort((a, b) => (a.barcode || "").localeCompare(b.barcode || ""));
+    // Process data to inject "Late" status based on dynamic schoolStartTime
+    const processedData = (data || []).map(att => {
+        // Extract time from created_at (HH:MM:SS)
+        const scanTime = new Date(att.created_at).toLocaleTimeString('en-GB', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
+
+        // Determine status: If scanTime is later than schoolStartTime, mark as LEWAT
+        // Note: schoolStartTime is the global variable we updated in initializeDashboard
+        const status = scanTime > schoolStartTime ? 'LEWAT' : 'HADIR';
+
+        return {
+            ...att,
+            computed_status: status,
+            scan_time_display: scanTime
+        };
+    });
+
+    // Sort by barcode for a consistent table view
+    todayAttendance = processedData.sort((a, b) => (a.barcode || "").localeCompare(b.barcode || ""));
     
+    // Refresh the UI
     if (typeof renderMuridTable === 'function') renderMuridTable();
 }
 
@@ -426,20 +461,56 @@ async function loadGuruData() {
     
     console.log("Searching Staff records for date:", selectedDate);
 
-    const { data: staff } = await supabase
+    // 1. Fetch all staff members for this school
+    const { data: staff, error: staffError } = await supabase
         .from('teachers')
         .select('*')
         .eq('school_id', currentSchoolId);
 
-    const { data: att } = await supabase
+    if (staffError) {
+        console.error("Error fetching staff:", staffError);
+        return;
+    }
+
+    // 2. Fetch attendance records for the selected date
+    const { data: att, error: attError } = await supabase
         .from('teacher_attendance')
         .select('*')
         .eq('school_id', currentSchoolId)
         .eq('date', selectedDate);
+
+    if (attError) {
+        console.error("Error fetching staff attendance:", attError);
+        return;
+    }
     
-    allStaff = staff || [];
-    todayStaffAttendance = att || [];
-    renderGuruTable();
+    // 3. Process attendance to inject "Late" status based on dynamic schoolStartTime
+    const processedAttendance = (att || []).map(satt => {
+        // Extract time from created_at (HH:MM:SS)
+        const staffScanTime = new Date(satt.created_at).toLocaleTimeString('en-GB', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
+
+        // Determine status: Compare against the global schoolStartTime
+        const status = staffScanTime > schoolStartTime ? 'LEWAT' : 'HADIR';
+
+        return {
+            ...satt,
+            computed_status: status,
+            scan_time_display: staffScanTime
+        };
+    });
+
+    // 4. Update global variables
+    // Sorting staff by name for a consistent UI experience
+    allStaff = (staff || []).sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
+    todayStaffAttendance = processedAttendance;
+
+    // 5. Refresh the UI
+    if (typeof renderGuruTable === 'function') renderGuruTable();
 }
 
 function renderGuruTable(roleFilter = 'SEMUA') {
