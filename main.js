@@ -166,13 +166,11 @@ async function initializeDashboard(userId) {
         .single();
 
     if (error || !profile) {
-        console.error("Auth error:", error); // Debugging is key here
+        console.error("Auth error:", error); 
         alert("Profil tidak sah atau sekolah tidak dijumpai.");
         return;
     }
 
-    
-    
     currentSchoolId = profile.school_id;
     currentSchoolCode = profile.schools?.school_code || "UNKNOWN";
     console.log(`Authenticated: ${profile.full_name} | School: ${currentSchoolCode} | ID: ${currentSchoolId}`);
@@ -217,7 +215,7 @@ async function initializeDashboard(userId) {
     if (typeof loadGuruData === 'function') await loadGuruData();
     if (typeof setupRealtime === 'function') setupRealtime();
 
-    // Safety check for Image Preview elements
+    // Image Preview logic
     const formImage = id('form-image');
     if (formImage) {
         formImage.onchange = (e) => {
@@ -242,16 +240,28 @@ async function initializeDashboard(userId) {
         };
     }
 
-    const closeModal = id('close-modal');
-    if (closeModal) {
-        closeModal.onclick = () => {
-            id('data-modal')?.classList.add('hidden');
-            const preview = id('image-preview');
-            const placeholder = id('preview-placeholder');
-            if (preview) { preview.src = ""; preview.classList.add('hidden'); }
-            if (placeholder) placeholder.classList.remove('hidden');
-            id('data-form')?.reset();
-        };
+    // --- CONSOLIDATED MODAL CLOSING LOGIC ---
+    const closeModalAction = () => {
+        id('data-modal')?.classList.add('hidden');
+        
+        // Reset image previews
+        const preview = id('image-preview');
+        const placeholder = id('preview-placeholder');
+        if (preview) { 
+            preview.src = ""; 
+            preview.classList.add('hidden'); 
+        }
+        if (placeholder) placeholder.classList.remove('hidden');
+        
+        // Reset form and global edit state
+        id('data-form')?.reset();
+        editingId = null; 
+    };
+
+    // Corrected to match the ID in your index.html
+    const closeModalBtn = id('close-modal-x'); 
+    if (closeModalBtn) {
+        closeModalBtn.onclick = closeModalAction;
     }
 }
 
