@@ -341,22 +341,22 @@ function renderMuridTable() {
 
         if (isHadir) {
             hadirCount++;
-            listHadir.push(s); // Add to popup list
+            listHadir.push(s); 
             
             const scanTime = new Date(record.timestamp);
             const limit = new Date(record.timestamp);
-            limit.setHours(7, 30, 0, 0);
+            limit.setHours(7, 30, 0, 0); // 7:30 AM Cut-off
             
             if (scanTime > limit) {
                 isLewat = true;
                 lewatCount++;
-                listLewat.push(s); // Add to popup list
+                listLewat.push(s);
             }
         } else {
-            listAbsent.push(s); // Add to popup list
+            listAbsent.push(s);
         }
 
-        // Main Dashboard Table Filter Logic
+        // Dashboard Table Filter Logic (main view)
         if (currentMuridStatusFilter === 'HADIR' && !isHadir) return;
         if (currentMuridStatusFilter === 'LEWAT' && !isLewat) return;
         if (currentMuridStatusFilter === 'ABSENT' && isHadir) return;
@@ -388,12 +388,16 @@ function renderMuridTable() {
     if (id('m-lewat')) id('m-lewat').innerText = lewatCount;
     if (id('m-absent')) id('m-absent').innerText = filteredStudents.length - hadirCount;
 
-    // --- Dynamic Click Listeners for Popup Modals ---
+    // --- REVISED: Click logic to target the full container card ---
     const setupCardClick = (statId, title, data) => {
         const target = id(statId);
-        if (target && target.parentElement) {
-            target.parentElement.style.cursor = 'pointer';
-            target.parentElement.onclick = () => {
+        // Find the closest card container (usually .stat-card)
+        const container = target?.closest('.stat-card') || target?.parentElement;
+        
+        if (container) {
+            container.style.cursor = 'pointer';
+            container.onclick = (e) => {
+                e.preventDefault();
                 if (typeof window.openStatsModal === 'function') {
                     window.openStatsModal(title, data);
                 }
@@ -443,30 +447,25 @@ function renderGuruTable(roleFilter = 'SEMUA') {
     let htmlContent = '';
     let visibleIndex = 1;
 
-    // --- NEW: Arrays for popup modals ---
     const listActive = [];
     const listDone = [];
     const listAbsent = [];
 
-    // Filter by Role (GURU/AKP) first
     const filteredByRole = allStaff.filter(s => roleFilter === 'SEMUA' || s.staff_type === roleFilter);
 
     filteredByRole.forEach((s) => {
         const record = todayStaffAttendance.find(a => a.teacher_id === s.id);
         
-        // Determine status for stats
         const isHadir = !!record;
         const isDone = !!(record && record.clock_out);
         const isActive = isHadir && !isDone;
         const isAbsent = !isHadir;
 
-        // Update stats counters & populate lists
         stats.total++;
         if (isActive) { stats.active++; listActive.push(s); }
         if (isDone) { stats.done++; listDone.push(s); }
         if (isAbsent) { stats.absent++; listAbsent.push(s); }
 
-        // Status Filtering Logic for main table
         if (currentStaffStatusFilter === 'ACTIVE' && !isActive) return;
         if (currentStaffStatusFilter === 'DONE' && !isDone) return;
         if (currentStaffStatusFilter === 'ABSENT' && !isAbsent) return;
@@ -485,7 +484,6 @@ function renderGuruTable(roleFilter = 'SEMUA') {
                 statusText = "Tamat Bertugas";
                 statusClass = "success";
                 
-                // Calculate work hours
                 const start = new Date(`${record.date} ${record.clock_in}`);
                 const end = new Date(`${record.date} ${record.clock_out}`);
                 const diffMs = end - start;
@@ -517,18 +515,23 @@ function renderGuruTable(roleFilter = 'SEMUA') {
 
     tbody.innerHTML = htmlContent || '<tr><td colspan="8" style="text-align:center;">Tiada rekod untuk status ini.</td></tr>';
 
-    // Update UI Stats numbers
     if (id('g-total')) id('g-total').innerText = stats.total;
     if (id('g-active')) id('g-active').innerText = stats.active;
     if (id('g-done')) id('g-done').innerText = stats.done;
     if (id('g-absent')) id('g-absent').innerText = stats.absent;
 
-    // --- NEW: Add Click Listeners to Staff Stats Cards ---
+    // --- REVISED: Click logic to target the full container card ---
     const setupGuruClick = (statId, title, data) => {
         const target = id(statId);
-        if (target && target.parentElement) {
-            target.parentElement.style.cursor = 'pointer';
-            target.parentElement.onclick = () => window.openStatsModal(title, data);
+        // We find the closest '.stat-card' (or whatever class your container uses)
+        const container = target?.closest('.stat-card') || target?.parentElement;
+        
+        if (container) {
+            container.style.cursor = 'pointer';
+            container.onclick = (e) => {
+                e.preventDefault();
+                window.openStatsModal(title, data);
+            };
         }
     };
 
