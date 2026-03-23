@@ -324,6 +324,7 @@ function renderMuridTable() {
     let hadirCount = 0;
     let lewatCount = 0;
     let rowsHtml = '';
+    let visibleIndex = 1; // Start numbering from 1
 
     // Sort by barcode
     filteredStudents.sort((a, b) => (a.barcode || "").localeCompare(b.barcode || ""));
@@ -357,9 +358,10 @@ function renderMuridTable() {
             ? new Date(record.timestamp).toLocaleTimeString('ms-MY', {hour: '2-digit', minute:'2-digit'}) 
             : '-';
 
+        // Use visibleIndex++ to ensure row numbering is correct even when filtered
         rowsHtml += `
             <tr>
-                <td>${tbody.children.length + 1}</td>
+                <td>${visibleIndex++}</td>
                 <td>${s.name}</td>
                 <td><code class="barcode-text">${s.barcode}</code></td>
                 <td>${timeDisplay}</td>
@@ -368,7 +370,8 @@ function renderMuridTable() {
         `;
     });
 
-    tbody.innerHTML = rowsHtml;
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="5" style="text-align:center;">Tiada data untuk dipaparkan.</td></tr>';
+    
     if (id('m-total')) id('m-total').innerText = filteredStudents.length;
     if (id('m-hadir')) id('m-hadir').innerText = hadirCount;
     if (id('m-lewat')) id('m-lewat').innerText = lewatCount;
