@@ -321,7 +321,6 @@ function renderMuridTable() {
         (s.name.toLowerCase().includes(searchTerm) || s.barcode.includes(searchTerm))
     );
 
-    // Arrays to hold data for the popup modals
     const listHadir = [];
     const listLewat = [];
     const listAbsent = [];
@@ -331,7 +330,6 @@ function renderMuridTable() {
     let rowsHtml = '';
     let visibleIndex = 1;
 
-    // Sort by barcode
     filteredStudents.sort((a, b) => (a.barcode || "").localeCompare(b.barcode || ""));
 
     filteredStudents.forEach((s) => {
@@ -341,12 +339,10 @@ function renderMuridTable() {
 
         if (isHadir) {
             hadirCount++;
-            listHadir.push(s); 
-            
+            listHadir.push(s);
             const scanTime = new Date(record.timestamp);
             const limit = new Date(record.timestamp);
-            limit.setHours(7, 30, 0, 0); // 7:30 AM Cut-off
-            
+            limit.setHours(7, 30, 0, 0);
             if (scanTime > limit) {
                 isLewat = true;
                 lewatCount++;
@@ -356,7 +352,6 @@ function renderMuridTable() {
             listAbsent.push(s);
         }
 
-        // Dashboard Table Filter Logic (main view)
         if (currentMuridStatusFilter === 'HADIR' && !isHadir) return;
         if (currentMuridStatusFilter === 'LEWAT' && !isLewat) return;
         if (currentMuridStatusFilter === 'ABSENT' && isHadir) return;
@@ -382,22 +377,20 @@ function renderMuridTable() {
 
     tbody.innerHTML = rowsHtml || '<tr><td colspan="5" style="text-align:center;">Tiada data untuk dipaparkan.</td></tr>';
     
-    // Update Stats Numbers on Dashboard
     if (id('m-total')) id('m-total').innerText = filteredStudents.length;
     if (id('m-hadir')) id('m-hadir').innerText = hadirCount;
     if (id('m-lewat')) id('m-lewat').innerText = lewatCount;
     if (id('m-absent')) id('m-absent').innerText = filteredStudents.length - hadirCount;
 
-    // --- REVISED: Click logic to target the full container card ---
+    // --- ENTIRE CONTAINER CLICK LOGIC ---
     const setupCardClick = (statId, title, data) => {
         const target = id(statId);
-        // Find the closest card container (usually .stat-card)
-        const container = target?.closest('.stat-card') || target?.parentElement;
+        // Find the outer box with class 'stat-card'
+        const container = target?.closest('.stat-card');
         
         if (container) {
             container.style.cursor = 'pointer';
-            container.onclick = (e) => {
-                e.preventDefault();
+            container.onclick = () => {
                 if (typeof window.openStatsModal === 'function') {
                     window.openStatsModal(title, data);
                 }
@@ -455,7 +448,6 @@ function renderGuruTable(roleFilter = 'SEMUA') {
 
     filteredByRole.forEach((s) => {
         const record = todayStaffAttendance.find(a => a.teacher_id === s.id);
-        
         const isHadir = !!record;
         const isDone = !!(record && record.clock_out);
         const isActive = isHadir && !isDone;
@@ -479,11 +471,9 @@ function renderGuruTable(roleFilter = 'SEMUA') {
             if (record.clock_in > "07:30:00") {
                 lateIndicator = `<span class="badge late-flash" style="margin-left:8px;">LEWAT</span>`;
             }
-
             if (isDone) {
                 statusText = "Tamat Bertugas";
                 statusClass = "success";
-                
                 const start = new Date(`${record.date} ${record.clock_in}`);
                 const end = new Date(`${record.date} ${record.clock_out}`);
                 const diffMs = end - start;
@@ -499,11 +489,8 @@ function renderGuruTable(roleFilter = 'SEMUA') {
         htmlContent += `
             <tr>
                 <td>${visibleIndex++}</td>
-                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'" style="width:35px; height:35px; border-radius:50%; object-fit:cover;"></td>
-                <td>
-                    ${s.honorific_title || ''} ${s.nama || s.name} 
-                    ${lateIndicator}
-                </td>
+                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'"></td>
+                <td>${s.honorific_title || ''} ${s.nama || s.name} ${lateIndicator}</td>
                 <td><code class="barcode-text">${s.barcode}</code></td>
                 <td>${record?.clock_in || '-'}</td>
                 <td>${record?.clock_out || '-'}</td>
@@ -513,24 +500,24 @@ function renderGuruTable(roleFilter = 'SEMUA') {
         `;
     });
 
-    tbody.innerHTML = htmlContent || '<tr><td colspan="8" style="text-align:center;">Tiada rekod untuk status ini.</td></tr>';
+    tbody.innerHTML = htmlContent || '<tr><td colspan="8" style="text-align:center;">Tiada rekod.</td></tr>';
 
     if (id('g-total')) id('g-total').innerText = stats.total;
     if (id('g-active')) id('g-active').innerText = stats.active;
     if (id('g-done')) id('g-done').innerText = stats.done;
     if (id('g-absent')) id('g-absent').innerText = stats.absent;
 
-    // --- REVISED: Click logic to target the full container card ---
+    // --- ENTIRE CONTAINER CLICK LOGIC ---
     const setupGuruClick = (statId, title, data) => {
         const target = id(statId);
-        // We find the closest '.stat-card' (or whatever class your container uses)
-        const container = target?.closest('.stat-card') || target?.parentElement;
+        const container = target?.closest('.stat-card');
         
         if (container) {
             container.style.cursor = 'pointer';
-            container.onclick = (e) => {
-                e.preventDefault();
-                window.openStatsModal(title, data);
+            container.onclick = () => {
+                if (typeof window.openStatsModal === 'function') {
+                    window.openStatsModal(title, data);
+                }
             };
         }
     };
