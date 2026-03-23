@@ -321,10 +321,15 @@ function renderMuridTable() {
         (s.name.toLowerCase().includes(searchTerm) || s.barcode.includes(searchTerm))
     );
 
+    // Arrays to hold data for the popup modals
+    const listHadir = [];
+    const listLewat = [];
+    const listAbsent = [];
+
     let hadirCount = 0;
     let lewatCount = 0;
     let rowsHtml = '';
-    let visibleIndex = 1; // Start numbering from 1
+    let visibleIndex = 1;
 
     // Sort by barcode
     filteredStudents.sort((a, b) => (a.barcode || "").localeCompare(b.barcode || ""));
@@ -336,16 +341,22 @@ function renderMuridTable() {
 
         if (isHadir) {
             hadirCount++;
+            listHadir.push(s); // Add to popup list
+            
             const scanTime = new Date(record.timestamp);
             const limit = new Date(record.timestamp);
             limit.setHours(7, 30, 0, 0);
+            
             if (scanTime > limit) {
                 isLewat = true;
                 lewatCount++;
+                listLewat.push(s); // Add to popup list
             }
+        } else {
+            listAbsent.push(s); // Add to popup list
         }
 
-        // Apply Clickable Filter Logic
+        // Main Dashboard Table Filter Logic
         if (currentMuridStatusFilter === 'HADIR' && !isHadir) return;
         if (currentMuridStatusFilter === 'LEWAT' && !isLewat) return;
         if (currentMuridStatusFilter === 'ABSENT' && isHadir) return;
@@ -358,7 +369,6 @@ function renderMuridTable() {
             ? new Date(record.timestamp).toLocaleTimeString('ms-MY', {hour: '2-digit', minute:'2-digit'}) 
             : '-';
 
-        // Use visibleIndex++ to ensure row numbering is correct even when filtered
         rowsHtml += `
             <tr>
                 <td>${visibleIndex++}</td>
@@ -372,10 +382,28 @@ function renderMuridTable() {
 
     tbody.innerHTML = rowsHtml || '<tr><td colspan="5" style="text-align:center;">Tiada data untuk dipaparkan.</td></tr>';
     
+    // Update Stats Numbers on Dashboard
     if (id('m-total')) id('m-total').innerText = filteredStudents.length;
     if (id('m-hadir')) id('m-hadir').innerText = hadirCount;
     if (id('m-lewat')) id('m-lewat').innerText = lewatCount;
     if (id('m-absent')) id('m-absent').innerText = filteredStudents.length - hadirCount;
+
+    // --- Dynamic Click Listeners for Popup Modals ---
+    const setupCardClick = (statId, title, data) => {
+        const target = id(statId);
+        if (target && target.parentElement) {
+            target.parentElement.style.cursor = 'pointer';
+            target.parentElement.onclick = () => {
+                if (typeof window.openStatsModal === 'function') {
+                    window.openStatsModal(title, data);
+                }
+            };
+        }
+    };
+
+    setupCardClick('m-hadir', 'Senarai Murid Hadir', listHadir);
+    setupCardClick('m-lewat', 'Senarai Murid Lewat', listLewat);
+    setupCardClick('m-absent', 'Senarai Murid Tidak Hadir', listAbsent);
 }
 
 // Global function to trigger filtering from cards
@@ -415,16 +443,16 @@ function renderGuruTable(roleFilter = 'SEMUA') {
     let htmlContent = '';
     let visibleIndex = 1;
 
+    // --- NEW: Arrays for popup modals ---
+    const listActive = [];
+    const listDone = [];
+    const listAbsent = [];
+
     // Filter by Role (GURU/AKP) first
     const filteredByRole = allStaff.filter(s => roleFilter === 'SEMUA' || s.staff_type === roleFilter);
 
     filteredByRole.forEach((s) => {
         const record = todayStaffAttendance.find(a => a.teacher_id === s.id);
-        
-        let statusText = "Tidak Hadir";
-        let statusClass = "danger";
-        let lateIndicator = "";
-        let workHours = "-";
         
         // Determine status for stats
         const isHadir = !!record;
@@ -432,18 +460,22 @@ function renderGuruTable(roleFilter = 'SEMUA') {
         const isActive = isHadir && !isDone;
         const isAbsent = !isHadir;
 
-        // Update stats counters
+        // Update stats counters & populate lists
         stats.total++;
-        if (isActive) stats.active++;
-        if (isDone) stats.done++;
-        if (isAbsent) stats.absent++;
+        if (isActive) { stats.active++; listActive.push(s); }
+        if (isDone) { stats.done++; listDone.push(s); }
+        if (isAbsent) { stats.absent++; listAbsent.push(s); }
 
-        // Status Filtering Logic: Skip rendering if it doesn't match the clicked card filter
+        // Status Filtering Logic for main table
         if (currentStaffStatusFilter === 'ACTIVE' && !isActive) return;
         if (currentStaffStatusFilter === 'DONE' && !isDone) return;
         if (currentStaffStatusFilter === 'ABSENT' && !isAbsent) return;
 
-        // Processing row data
+        let statusText = "Tidak Hadir";
+        let statusClass = "danger";
+        let lateIndicator = "";
+        let workHours = "-";
+        
         if (record) {
             if (record.clock_in > "07:30:00") {
                 lateIndicator = `<span class="badge late-flash" style="margin-left:8px;">LEWAT</span>`;
@@ -453,6 +485,7 @@ function renderGuruTable(roleFilter = 'SEMUA') {
                 statusText = "Tamat Bertugas";
                 statusClass = "success";
                 
+                // Calculate work hours
                 const start = new Date(`${record.date} ${record.clock_in}`);
                 const end = new Date(`${record.date} ${record.clock_out}`);
                 const diffMs = end - start;
@@ -468,12 +501,12 @@ function renderGuruTable(roleFilter = 'SEMUA') {
         htmlContent += `
             <tr>
                 <td>${visibleIndex++}</td>
-                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'"></td>
+                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'" style="width:35px; height:35px; border-radius:50%; object-fit:cover;"></td>
                 <td>
-                    ${s.honorific_title || ''} ${s.name} 
+                    ${s.honorific_title || ''} ${s.nama || s.name} 
                     ${lateIndicator}
                 </td>
-                <td>${s.barcode}</td>
+                <td><code class="barcode-text">${s.barcode}</code></td>
                 <td>${record?.clock_in || '-'}</td>
                 <td>${record?.clock_out || '-'}</td>
                 <td>${workHours}</td>
@@ -484,11 +517,24 @@ function renderGuruTable(roleFilter = 'SEMUA') {
 
     tbody.innerHTML = htmlContent || '<tr><td colspan="8" style="text-align:center;">Tiada rekod untuk status ini.</td></tr>';
 
-    // Update UI Stats
+    // Update UI Stats numbers
     if (id('g-total')) id('g-total').innerText = stats.total;
     if (id('g-active')) id('g-active').innerText = stats.active;
     if (id('g-done')) id('g-done').innerText = stats.done;
     if (id('g-absent')) id('g-absent').innerText = stats.absent;
+
+    // --- NEW: Add Click Listeners to Staff Stats Cards ---
+    const setupGuruClick = (statId, title, data) => {
+        const target = id(statId);
+        if (target && target.parentElement) {
+            target.parentElement.style.cursor = 'pointer';
+            target.parentElement.onclick = () => window.openStatsModal(title, data);
+        }
+    };
+
+    setupGuruClick('g-active', 'Senarai Staf Sedang Bertugas', listActive);
+    setupGuruClick('g-done', 'Senarai Staf Tamat Bertugas', listDone);
+    setupGuruClick('g-absent', 'Senarai Staf Tidak Hadir', listAbsent);
 }
 
 /**
@@ -1218,6 +1264,99 @@ if (logoutBtn) {
         location.reload(); 
     };
 }
+
+// --- STATS MODAL & EXPORTS ---
+
+window.openStatsModal = (title, list) => {
+    const modal = id('stats-modal');
+    const modalTitle = id('stats-modal-title');
+    const container = id('stats-modal-content');
+    
+    if (!modal || !container) return;
+
+    modalTitle.innerText = title;
+    window.currentStatsData = list; // Save for PDF/CSV buttons
+    window.currentStatsTitle = title;
+
+    if (list.length === 0) {
+        container.innerHTML = '<p style="padding:20px; text-align:center;">Tiada rekod untuk dipaparkan.</p>';
+    } else {
+        let html = `
+            <table class="excel-table">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Nama</th>
+                        <th>Barcode</th>
+                        <th>Kelas/Jawatan</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+        
+        list.forEach((item, idx) => {
+            html += `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td>${item.name || item.nama}</td>
+                    <td>${item.barcode}</td>
+                    <td>${item.class_name_full || item.role || '-'}</td>
+                </tr>`;
+        });
+        
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+    }
+
+    modal.classList.remove('hidden');
+};
+
+window.closeStatsModal = () => {
+    id('stats-modal')?.classList.add('hidden');
+};
+
+window.exportStatsCSV = () => {
+    if (!window.currentStatsData || window.currentStatsData.length === 0) return;
+    
+    const headers = ["Nama", "Barcode", "Info"];
+    const rows = window.currentStatsData.map(s => [s.name || s.nama, s.barcode, s.class_name_full || s.role]);
+    
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF" // Added BOM for Excel Malay char support
+        + [headers, ...rows].map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${window.currentStatsTitle}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+window.exportStatsPDF = () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.text(window.currentStatsTitle, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Tarikh: ${new Date().toLocaleDateString('ms-MY')}`, 14, 22);
+
+    const body = window.currentStatsData.map((s, idx) => [
+        idx + 1,
+        s.name || s.nama,
+        s.barcode,
+        s.class_name_full || s.role
+    ]);
+
+    doc.autoTable({
+        startY: 25,
+        head: [['No.', 'Nama', 'Barcode', 'Kelas/Jawatan']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    doc.save(`${window.currentStatsTitle}.pdf`);
+};
 
 // --- WINDOW EXPORTS ---
 window.handleCSVImportClick = () => id('csv-upload')?.click();
