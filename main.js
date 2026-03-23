@@ -242,7 +242,8 @@ async function initializeDashboard(userId) {
 
     // --- CONSOLIDATED MODAL CLOSING LOGIC ---
     const closeModalAction = () => {
-        id('data-modal')?.classList.add('hidden');
+        // Updated to match your index.html ID
+        id('student-modal')?.classList.add('hidden');
         
         // Reset image previews
         const preview = id('image-preview');
@@ -253,16 +254,26 @@ async function initializeDashboard(userId) {
         }
         if (placeholder) placeholder.classList.remove('hidden');
         
-        // Reset form and global edit state
-        id('data-form')?.reset();
-        editingId = null; 
+        // Updated to match your index.html ID
+        id('student-form')?.reset();
+        
+        // Reset global edit state if it exists
+        if (typeof editingId !== 'undefined') editingId = null; 
     };
 
-    // Corrected to match the ID in your index.html
+    // Binding the X button logic
     const closeModalBtn = id('close-modal-x'); 
     if (closeModalBtn) {
         closeModalBtn.onclick = closeModalAction;
     }
+
+    // Close modal if user clicks on the dark background overlay
+    window.onclick = (event) => {
+        const modal = id('student-modal');
+        if (event.target === modal) {
+            closeModalAction();
+        }
+    };
 }
 
 // --- NAVIGATION LOGIC ---

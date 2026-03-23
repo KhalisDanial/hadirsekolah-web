@@ -1068,3 +1068,7 @@ th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size:
     align-items: center;
     width: 100%;
 }
+
+.hidden {
+    display: none !important;
+}
