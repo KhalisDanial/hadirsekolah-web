@@ -362,11 +362,13 @@ function renderMuridTable() {
     const selectedClass = classDropdown.value;
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
     
+    // Filter students by class and search search term
     const filteredStudents = allStudents.filter(s => 
         s.class_name_full === selectedClass && 
         (s.name.toLowerCase().includes(searchTerm) || s.barcode.includes(searchTerm))
     );
 
+    // Lists for the Stats Modal
     const listHadir = [];
     const listLewat = [];
     const listAbsent = [];
@@ -376,21 +378,21 @@ function renderMuridTable() {
     let rowsHtml = '';
     let visibleIndex = 1;
 
+    // Ensure students are sorted by barcode for a clean table
     filteredStudents.sort((a, b) => (a.barcode || "").localeCompare(b.barcode || ""));
 
     filteredStudents.forEach((s) => {
+        // Find if this student has an attendance record today
         const record = todayAttendance.find(a => a.student_id === s.id);
         const isHadir = !!record;
-        let isLewat = false;
+        
+        // Use the dynamic status we computed during data fetching
+        const isLewat = record?.computed_status === 'LEWAT';
 
         if (isHadir) {
             hadirCount++;
             listHadir.push(s);
-            const scanTime = new Date(record.timestamp);
-            const limit = new Date(record.timestamp);
-            limit.setHours(7, 30, 0, 0);
-            if (scanTime > limit) {
-                isLewat = true;
+            if (isLewat) {
                 lewatCount++;
                 listLewat.push(s);
             }
@@ -398,6 +400,7 @@ function renderMuridTable() {
             listAbsent.push(s);
         }
 
+        // Apply UI Filter (from the stats card clicks if active)
         if (currentMuridStatusFilter === 'HADIR' && !isHadir) return;
         if (currentMuridStatusFilter === 'LEWAT' && !isLewat) return;
         if (currentMuridStatusFilter === 'ABSENT' && isHadir) return;
@@ -406,9 +409,8 @@ function renderMuridTable() {
             ? (isLewat ? '<span class="badge warning">Lewat</span>' : '<span class="badge success">Hadir</span>')
             : '<span class="badge danger">Tidak Hadir</span>';
 
-        const timeDisplay = record 
-            ? new Date(record.timestamp).toLocaleTimeString('ms-MY', {hour: '2-digit', minute:'2-digit'}) 
-            : '-';
+        // Display the scan time we formatted during fetch, or a dash if absent
+        const timeDisplay = record ? record.scan_time_display : '-';
 
         rowsHtml += `
             <tr>
@@ -423,15 +425,16 @@ function renderMuridTable() {
 
     tbody.innerHTML = rowsHtml || '<tr><td colspan="5" style="text-align:center;">Tiada data untuk dipaparkan.</td></tr>';
     
+    // Update the Stats Numbers on the Dashboard
     if (id('m-total')) id('m-total').innerText = filteredStudents.length;
     if (id('m-hadir')) id('m-hadir').innerText = hadirCount;
     if (id('m-lewat')) id('m-lewat').innerText = lewatCount;
     if (id('m-absent')) id('m-absent').innerText = filteredStudents.length - hadirCount;
 
-    // --- FIXED: Changed .stat-card to .stat-item ---
+    // --- SETUP CLICKABLE CARDS TO OPEN MODAL ---
     const setupCardClick = (statId, title, data) => {
         const target = id(statId);
-        const container = target?.closest('.stat-item'); // Matches your index.html
+        const container = target?.closest('.stat-item'); // Matches the class in your index.html
         
         if (container) {
             container.style.cursor = 'pointer';
@@ -517,13 +520,15 @@ function renderGuruTable(roleFilter = 'SEMUA') {
     const tbody = id('guru-list-body');
     if (!tbody) return;
 
-    let stats = { total: 0, active: 0, done: 0, absent: 0 };
+    // Added 'lewat' to the stats tracker
+    let stats = { total: 0, active: 0, done: 0, absent: 0, lewat: 0 };
     let htmlContent = '';
     let visibleIndex = 1;
 
     const listActive = [];
     const listDone = [];
     const listAbsent = [];
+    const listLewat = [];
 
     const filteredByRole = allStaff.filter(s => roleFilter === 'SEMUA' || s.staff_type === roleFilter);
 
@@ -533,15 +538,21 @@ function renderGuruTable(roleFilter = 'SEMUA') {
         const isDone = !!(record && record.clock_out);
         const isActive = isHadir && !isDone;
         const isAbsent = !isHadir;
+        
+        // Use the computed_status from our loadGuruData fetch
+        const isLewat = record?.computed_status === 'LEWAT';
 
         stats.total++;
         if (isActive) { stats.active++; listActive.push(s); }
         if (isDone) { stats.done++; listDone.push(s); }
         if (isAbsent) { stats.absent++; listAbsent.push(s); }
+        if (isLewat) { stats.lewat++; listLewat.push(s); }
 
+        // Filter table rows based on dashboard selection
         if (currentStaffStatusFilter === 'ACTIVE' && !isActive) return;
         if (currentStaffStatusFilter === 'DONE' && !isDone) return;
         if (currentStaffStatusFilter === 'ABSENT' && !isAbsent) return;
+        if (currentStaffStatusFilter === 'LEWAT' && !isLewat) return;
 
         let statusText = "Tidak Hadir";
         let statusClass = "danger";
@@ -549,9 +560,11 @@ function renderGuruTable(roleFilter = 'SEMUA') {
         let workHours = "-";
         
         if (record) {
-            if (record.clock_in > "07:30:00") {
+            // Dynamic late check using schoolStartTime
+            if (isLewat) {
                 lateIndicator = `<span class="badge late-flash" style="margin-left:8px;">LEWAT</span>`;
             }
+
             if (isDone) {
                 statusText = "Tamat Bertugas";
                 statusClass = "success";
@@ -583,15 +596,17 @@ function renderGuruTable(roleFilter = 'SEMUA') {
 
     tbody.innerHTML = htmlContent || '<tr><td colspan="8" style="text-align:center;">Tiada rekod.</td></tr>';
 
+    // Update Dashboard Stats Numbers
     if (id('g-total')) id('g-total').innerText = stats.total;
     if (id('g-active')) id('g-active').innerText = stats.active;
     if (id('g-done')) id('g-done').innerText = stats.done;
     if (id('g-absent')) id('g-absent').innerText = stats.absent;
+    if (id('g-lewat')) id('g-lewat').innerText = stats.lewat;
 
-    // --- FIXED: Changed .stat-card to .stat-item ---
+    // --- SETUP CLICKABLE CARDS TO OPEN MODAL ---
     const setupGuruClick = (statId, title, data) => {
         const target = id(statId);
-        const container = target?.closest('.stat-item'); // Matches your index.html
+        const container = target?.closest('.stat-item'); 
         
         if (container) {
             container.style.cursor = 'pointer';
@@ -606,6 +621,7 @@ function renderGuruTable(roleFilter = 'SEMUA') {
     setupGuruClick('g-active', 'Senarai Staf Sedang Bertugas', listActive);
     setupGuruClick('g-done', 'Senarai Staf Tamat Bertugas', listDone);
     setupGuruClick('g-absent', 'Senarai Staf Tidak Hadir', listAbsent);
+    setupGuruClick('g-lewat', 'Senarai Staf Lewat', listLewat);
 }
 
 /**
