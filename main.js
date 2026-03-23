@@ -382,11 +382,10 @@ function renderMuridTable() {
     if (id('m-lewat')) id('m-lewat').innerText = lewatCount;
     if (id('m-absent')) id('m-absent').innerText = filteredStudents.length - hadirCount;
 
-    // --- ENTIRE CONTAINER CLICK LOGIC ---
+    // --- FIXED: Changed .stat-card to .stat-item ---
     const setupCardClick = (statId, title, data) => {
         const target = id(statId);
-        // Change '.stat-card' to '.stat-item' to match your HTML
-        const container = target?.closest('.stat-item'); 
+        const container = target?.closest('.stat-item'); // Matches your index.html
         
         if (container) {
             container.style.cursor = 'pointer';
@@ -507,11 +506,10 @@ function renderGuruTable(roleFilter = 'SEMUA') {
     if (id('g-done')) id('g-done').innerText = stats.done;
     if (id('g-absent')) id('g-absent').innerText = stats.absent;
 
-    // --- ENTIRE CONTAINER CLICK LOGIC ---
+    // --- FIXED: Changed .stat-card to .stat-item ---
     const setupGuruClick = (statId, title, data) => {
         const target = id(statId);
-        // Change '.stat-card' to '.stat-item' to match your HTML
-        const container = target?.closest('.stat-item'); 
+        const container = target?.closest('.stat-item'); // Matches your index.html
         
         if (container) {
             container.style.cursor = 'pointer';
