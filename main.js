@@ -827,10 +827,33 @@ if (dataForm) {
 // --- IMPORT HELP POPUP ---
 const showImportHelp = () => {
     const isMurid = currentManageView === 'MURID';
-    const format = isMurid ? "nama, barcode, tahun, nama_kelas" : "nama, barcode, gelaran, jawatan";
-    const contoh = isMurid ? "Ali Bin Abu, STU-101, 6, Ibnu Sina" : "Ahmad, TEA-001, Encik, GURU";
+    
+    // Define specific details based on view
+    const title = isMurid ? "PENGURUSAN MURID" : "PENGURUSAN STAF (GURU/AKP)";
+    const columns = isMurid 
+        ? "nama, barcode, tahun, nama_kelas" 
+        : "nama, barcode, gelaran, jawatan";
+    const example = isMurid 
+        ? "Ali Bin Abu, STU-101, 6, Ibnu Sina" 
+        : "Ahmad, TEA-001, Encik, GURU";
+    const additionalNote = isMurid
+        ? "• 'tahun' (1-6 / Peralihan / Form 1-5)\n• 'nama_kelas' mestilah tepat."
+        : "• 'gelaran' (Encik, Puan, Ustaz, dll)\n• 'jawatan' MESTI: GURU atau AKP.";
 
-    alert(`FORMAT CSV ${currentManageView}:\n\nKolum: ${format}\nContoh: ${contoh}\n\nNota: Sistem akan secara automatik mendaftarkan data ini ke sekolah anda.`);
+    const message = `--- PANDUAN IMPORT CSV: ${title} ---
+
+1. SUSUNAN KOLUM:
+${columns}
+
+2. CONTOH REKOD:
+${example}
+
+3. NOTA PENTING:
+${additionalNote}
+• Pastikan fail disimpan dalam format .csv (Comma Delimited).
+• Sistem akan memadankan data secara automatik ke kod sekolah ${currentSchoolCode}.`;
+
+    alert(message);
 };
 
 // --- REVISED CSV IMPORT LOGIC ---
