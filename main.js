@@ -289,7 +289,7 @@ async function initializeDashboard(userId) {
     };
 
     // Binding the X button logic
-    const closeModalBtn = id('close-modal-x'); 
+    const closeModalBtn = id('close-modal-btn'); 
     if (closeModalBtn) {
         closeModalBtn.onclick = closeModalAction;
     }
