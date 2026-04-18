@@ -449,7 +449,8 @@ function renderMuridTable() {
     // --- SETUP CLICKABLE CARDS TO OPEN MODAL ---
     const setupCardClick = (statId, title, data) => {
         const target = id(statId);
-        const container = target?.closest('.stat-item'); // Matches the class in your index.html
+        // TUKAR '.stat-item' KEPADA '.stat-clickable'
+        const container = target?.closest('.stat-clickable'); 
         
         if (container) {
             container.style.cursor = 'pointer';
@@ -461,6 +462,8 @@ function renderMuridTable() {
         }
     };
 
+    // TAMBAH UNTUK 'JUMLAH MURID'
+    setupCardClick('m-total', 'Jumlah Murid', filteredStudents); 
     setupCardClick('m-hadir', 'Senarai Murid Hadir', listHadir);
     setupCardClick('m-lewat', 'Senarai Murid Lewat', listLewat);
     setupCardClick('m-absent', 'Senarai Murid Tidak Hadir', listAbsent);
@@ -621,7 +624,8 @@ function renderGuruTable(roleFilter = 'SEMUA') {
     // --- SETUP CLICKABLE CARDS TO OPEN MODAL ---
     const setupGuruClick = (statId, title, data) => {
         const target = id(statId);
-        const container = target?.closest('.stat-item'); 
+        // TUKAR '.stat-item' KEPADA '.stat-clickable'
+        const container = target?.closest('.stat-clickable'); 
         
         if (container) {
             container.style.cursor = 'pointer';
@@ -633,6 +637,8 @@ function renderGuruTable(roleFilter = 'SEMUA') {
         }
     };
 
+    // TAMBAH UNTUK 'JUMLAH GURU'
+    setupGuruClick('g-total', 'Jumlah Guru/AKP', filteredByRole);
     setupGuruClick('g-active', 'Senarai Staf Sedang Bertugas', listActive);
     setupGuruClick('g-done', 'Senarai Staf Tamat Bertugas', listDone);
     setupGuruClick('g-absent', 'Senarai Staf Tidak Hadir', listAbsent);
