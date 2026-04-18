@@ -37,6 +37,21 @@ if (loginForm) {
     });
 }
 
+// --- PASSWORD VISIBILITY TOGGLE ---
+const togglePassword = id('toggle-password');
+const passwordInput = id('password');
+
+if (togglePassword && passwordInput) {
+    togglePassword.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        // Tukar ikon
+        togglePassword.classList.toggle('fa-eye');
+        togglePassword.classList.toggle('fa-eye-slash');
+    });
+}
+
 // --- NEW GLOBAL UTILITIES ---
 window.toggleSelectAll = (source) => {
     const checkboxes = document.querySelectorAll('.row-checkbox');

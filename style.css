@@ -81,6 +81,32 @@ td:has(.staff-img) {
     border: 1px solid rgba(255,255,255,0.1);
 }
 
+/* --- PASSWORD TOGGLE --- */
+.password-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1.25rem;
+}
+
+.password-wrapper input {
+    margin-bottom: 0 !important; /* Ganti margin asal untuk wrapper */
+    padding-right: 2.5rem !important; /* Ruang untuk ikon */
+}
+
+#toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+#toggle-password:hover {
+    color: var(--primary);
+}
+
 #login-form h2 {
     margin-bottom: 1.5rem;
     color: var(--primary);
