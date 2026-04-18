@@ -550,6 +550,11 @@ function renderGuruTable(roleFilter = 'SEMUA') {
 
     const filteredByRole = allStaff.filter(s => roleFilter === 'SEMUA' || s.staff_type === roleFilter);
 
+    // --- SORT BY BARCODE (Numeric Natural Sort) ---
+    filteredByRole.sort((a, b) => {
+        return a.barcode.localeCompare(b.barcode, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
     filteredByRole.forEach((s) => {
         const record = todayStaffAttendance.find(a => a.teacher_id === s.id);
         const isHadir = !!record;
