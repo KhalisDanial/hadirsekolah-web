@@ -1284,6 +1284,18 @@ if (guruFilterGroup) {
     };
 }
 
+// Fungsi untuk tutup modal edit
+window.closeEditModal = () => {
+    const modal = id('edit-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        // Reset form jika perlu supaya data lama tak tersangkut
+        id('edit-form').reset();
+        id('preview-img').classList.add('hidden');
+        id('preview-placeholder').classList.remove('hidden');
+    }
+};
+
 // --- EXPORT LOGIC ---
 function getDynamicFilename(baseName, includeClass = false) {
     const now = new Date();
