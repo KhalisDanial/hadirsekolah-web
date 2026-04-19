@@ -1,8 +1,11 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+// 1. Configuration
 const supabaseUrl = 'https://cawrvnutflgvbrisuqtd.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhd3J2bnV0ZmxndmJyaXN1cXRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNDcwODgsImV4cCI6MjA4MTYyMzA4OH0.ZLSVVcZUl2muc584TL_UIYxykjrf_F_dOtDJp53A3cU'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
+// 2. Global State
 let currentSchoolId = null;
 let currentSchoolCode = ""; 
 let allStudents = [];
@@ -10,49 +13,85 @@ let todayAttendance = [];
 let allStaff = [];
 let todayStaffAttendance = [];
 let currentMode = 'MURID'; 
-let currentMuridStatusFilter = 'ALL'; // ALL, HADIR, LEWAT, ABSENT
-let currentStaffStatusFilter = 'ALL'; // ALL, ACTIVE, DONE, ABSENT
-let schoolStartTime = "07:30:00"; // Default fallback
+let currentMuridStatusFilter = 'ALL'; 
+let currentStaffStatusFilter = 'ALL'; 
+let schoolStartTime = "07:30:00"; 
+// let editingId = null; // Defined here to prevent "not defined" errors later
 
-// Utility
-function id(name) { return document.getElementById(name); }
+// 3. Utility Function
+const id = (name) => document.getElementById(name);
 
-// --- AUTH & INITIALIZATION ---
+// ==========================================
+// --- AUTH & SESSION MANAGEMENT ---
+// ==========================================
+
+/**
+ * Check if a user is already logged in when the page refreshes
+ */
+window.addEventListener('DOMContentLoaded', async () => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (session && session.user) {
+        console.log("Active session found for:", session.user.email);
+        initializeDashboard(session.user.id);
+    } else {
+        // Not logged in, show the login screen
+        id('login-container')?.classList.remove('hidden');
+        id('dashboard-container')?.classList.add('hidden');
+    }
+});
+
+/**
+ * Handle Login Form Submission
+ */
 const loginForm = id('login-form');
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const emailEl = id('email');
-        const passEl = id('password');
-        
-        if (!emailEl || !passEl) return;
+        const email = id('email')?.value;
+        const password = id('password')?.value;
 
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: emailEl.value,
-            password: passEl.value
-        });
+        if (!email || !password) return;
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         
-        if (error) alert(error.message);
-        else if (data?.user) initializeDashboard(data.user.id);
+        if (error) {
+            alert("Ralat Log Masuk: " + error.message);
+        } else if (data?.user) {
+            initializeDashboard(data.user.id);
+        }
     });
 }
 
-// --- PASSWORD VISIBILITY TOGGLE ---
+/**
+ * Handle Logout
+ */
+window.handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) alert(error.message);
+    window.location.reload(); // Refresh the page to reset all states
+};
+
+// ==========================================
+// --- UI INTERNALS ---
+// ==========================================
+
+// Password Visibility Toggle
 const togglePassword = id('toggle-password');
 const passwordInput = id('password');
 
 if (togglePassword && passwordInput) {
     togglePassword.addEventListener('click', () => {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
+        const isPassword = passwordInput.getAttribute('type') === 'password';
+        passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
         
-        // Tukar ikon
-        togglePassword.classList.toggle('fa-eye');
-        togglePassword.classList.toggle('fa-eye-slash');
+        // Toggle FontAwesome icons
+        togglePassword.classList.toggle('fa-eye', !isPassword);
+        togglePassword.classList.toggle('fa-eye-slash', isPassword);
     });
 }
 
-// --- NEW GLOBAL UTILITIES ---
+// Batch Selection Logic
 window.toggleSelectAll = (source) => {
     const checkboxes = document.querySelectorAll('.row-checkbox');
     checkboxes.forEach(cb => cb.checked = source.checked);
