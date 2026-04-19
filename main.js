@@ -876,7 +876,7 @@ function renderExcelTable(container, headers, data, mode) {
     `;
 }
 
-async function compressImage(file, { maxWidth = 800, maxHeight = 800, quality = 0.7 } = {}) {
+async function compressImage(file, { maxWidth = 800, maxHeight = 800, quality = 0.6 } = {}) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -1286,11 +1286,11 @@ if (guruFilterGroup) {
 
 // Fungsi untuk tutup modal edit
 window.closeEditModal = () => {
-    const modal = id('edit-modal');
+    const modal = id('data-modal');
     if (modal) {
         modal.classList.add('hidden');
         // Reset form jika perlu supaya data lama tak tersangkut
-        id('edit-form').reset();
+        id('data-form').reset();
         id('preview-img').classList.add('hidden');
         id('preview-placeholder').classList.remove('hidden');
     }
