@@ -174,6 +174,29 @@ async function refreshStaffTypeDropdown() {
     }
 }
 
+// --- MASTER MODAL CONTROL ---
+window.closeDataModal = () => {
+    // 1. Hide the main modal
+    id('data-modal')?.classList.add('hidden');
+    
+    // 2. Reset the form fields
+    id('data-form')?.reset();
+    
+    // 3. Clear the image preview completely
+    const preview = id('preview-img'); 
+    const placeholder = id('preview-placeholder');
+    if (preview) {
+        preview.src = "";
+        preview.classList.add('hidden');
+    }
+    if (placeholder) {
+        placeholder.classList.remove('hidden');
+    }
+
+    // 4. Reset state
+    editingId = null;
+};
+
 async function initializeDashboard(userId) {
     // 1. Fetch Profile and joined School data
     const { data: profile, error } = await supabase
@@ -188,28 +211,18 @@ async function initializeDashboard(userId) {
         return;
     }
 
-    // 2. Set Global Variables from Database
+    // 2. Set Global Variables
     currentSchoolId = profile.school_id;
     currentSchoolCode = profile.schools?.school_code || "UNKNOWN";
-    
-    // Dynamically set the late threshold (defaulting to 07:30:00 if column is empty)
     schoolStartTime = profile.schools?.start_time || "07:30:00";
     
-    console.log(`Authenticated: ${profile.full_name}`);
-    console.log(`School: ${currentSchoolCode} (Start Time: ${schoolStartTime})`);
-    
     // 3. Update UI Header Info
-    const schoolDisplay = id('school-name-display');
-    const adminName = id('admin-name');
-    const adminRole = id('admin-role');
-
-    if (schoolDisplay) schoolDisplay.innerText = `Hadir${currentSchoolCode}`;
-    if (adminName) adminName.innerText = profile.full_name || "Admin";
-    if (adminRole) adminRole.innerText = profile.role || "Penyelaras";
+    if (id('school-name-display')) id('school-name-display').innerText = `Hadir${currentSchoolCode}`;
+    if (id('admin-name')) id('admin-name').innerText = profile.full_name || "Admin";
+    if (id('admin-role')) id('admin-role').innerText = profile.role || "Penyelaras";
 
     // 4. Date Picker Logic
     const datePicker = id('date-picker');
-    const btnToday = id('btn-today');
     const todayISO = new Date().toISOString().split('T')[0];
 
     if (datePicker) {
@@ -220,8 +233,8 @@ async function initializeDashboard(userId) {
         };
     }
 
-    if (btnToday) {
-        btnToday.onclick = () => {
+    if (id('btn-today')) {
+        id('btn-today').onclick = () => {
             if (datePicker && datePicker.value !== todayISO) {
                 datePicker.value = todayISO;
                 fetchMuridAttendance();
@@ -230,28 +243,29 @@ async function initializeDashboard(userId) {
         };
     }
 
-    // 5. Switch View from Login to Dashboard
+    // 5. Switch View
     id('login-container')?.classList.add('hidden');
     id('dashboard-container')?.classList.remove('hidden');
 
     // 6. Initial Data Load
-    await refreshClassDropdown();
-    await refreshStaffTypeDropdown();
-    await fetchMuridAttendance();
+    await Promise.all([
+        refreshClassDropdown(),
+        refreshStaffTypeDropdown(),
+        fetchMuridAttendance()
+    ]);
     
     if (typeof loadGuruData === 'function') await loadGuruData();
     if (typeof setupRealtime === 'function') setupRealtime();
 
-    // 7. Image Preview logic
+    // 7. Image Upload Preview (When selecting a file)
     const formImage = id('form-image');
     if (formImage) {
         formImage.onchange = (e) => {
             const file = e.target.files[0];
-            const preview = id('image-preview');
+            const preview = id('preview-img'); // Match ID
             const placeholder = id('preview-placeholder');
-            if (!preview || !placeholder) return;
-
-            if (file) {
+            
+            if (file && preview && placeholder) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     preview.src = event.target.result;
@@ -259,48 +273,9 @@ async function initializeDashboard(userId) {
                     placeholder.classList.add('hidden');
                 };
                 reader.readAsDataURL(file);
-            } else {
-                preview.src = "";
-                preview.classList.add('hidden');
-                placeholder.classList.remove('hidden');
             }
         };
     }
-
-    // 8. --- CONSOLIDATED MODAL CLOSING LOGIC ---
-    const closeModalAction = () => {
-        // Match IDs in index.html
-        id('student-modal')?.classList.add('hidden');
-        
-        // Reset image previews
-        const preview = id('image-preview');
-        const placeholder = id('preview-placeholder');
-        if (preview) { 
-            preview.src = ""; 
-            preview.classList.add('hidden'); 
-        }
-        if (placeholder) placeholder.classList.remove('hidden');
-        
-        // Match IDs in index.html
-        id('student-form')?.reset();
-        
-        // Reset global edit state
-        if (typeof editingId !== 'undefined') editingId = null; 
-    };
-
-    // Binding the X button logic
-    const closeModalBtn = id('close-modal-x'); 
-    if (closeModalBtn) {
-        closeModalBtn.onclick = closeModalAction;
-    }
-
-    // Close modal if user clicks on the dark background overlay
-    window.onclick = (event) => {
-        const modal = id('student-modal');
-        if (event.target === modal) {
-            closeModalAction();
-        }
-    };
 }
 
 // --- NAVIGATION LOGIC ---
@@ -1041,7 +1016,7 @@ if (dataForm) {
             // UI Cleanup
             id('data-modal')?.classList.add('hidden');
             dataForm.reset();
-            const preview = id('image-preview');
+            const preview = id('preview-img');
             const placeholder = id('preview-placeholder');
             if (preview) { preview.src = ""; preview.classList.add('hidden'); }
             if (placeholder) placeholder.classList.remove('hidden');
@@ -1162,14 +1137,21 @@ const handleCSVImport = async (e) => {
 };
 
 // --- MODAL CONTROLS ---
+
 const addMuridBtn = id('open-add-murid');
 if (addMuridBtn) {
     addMuridBtn.onclick = () => {
         editingId = null;
         currentMode = 'MURID';
         id('data-form')?.reset();
+        
+        // Ensure image preview is reset to placeholder for NEW record
+        id('preview-img')?.classList.add('hidden');
+        id('preview-placeholder')?.classList.remove('hidden');
+
         const mTitle = id('modal-title');
         if (mTitle) mTitle.innerText = "Tambah Murid Baru";
+        
         id('student-only-fields')?.classList.remove('hidden');
         id('staff-only-fields')?.classList.add('hidden');
         id('data-modal')?.classList.remove('hidden');
@@ -1182,28 +1164,53 @@ if (addStafBtn) {
         editingId = null;
         currentMode = 'STAFF';
         id('data-form')?.reset();
+        
+        // Ensure image preview is reset to placeholder for NEW record
+        id('preview-img')?.classList.add('hidden');
+        id('preview-placeholder')?.classList.remove('hidden');
+
         const mTitle = id('modal-title');
         if (mTitle) mTitle.innerText = "Tambah Staf Baru";
+        
         id('student-only-fields')?.classList.add('hidden');
         id('staff-only-fields')?.classList.remove('hidden');
         id('data-modal')?.classList.remove('hidden');
     };
 }
 
+// ==========================================
+// --- DATA MANAGEMENT (EDIT & DELETE) ---
+// ==========================================
+
 window.editRecord = async (type, recordId) => {
     editingId = recordId;
     currentMode = type;
     const table = type === 'MURID' ? 'students' : 'teachers';
+    
     const { data, error } = await supabase.from(table).select('*').eq('id', recordId).single();
     if (error) return alert("Gagal mengambil data");
 
     const nameField = id('form-name');
     const barcodeField = id('form-barcode');
     const mTitle = id('modal-title');
+    const previewImg = id('preview-img');
+    const placeholder = id('preview-placeholder');
     
     if (nameField) nameField.value = data.name || "";
     if (barcodeField) barcodeField.value = data.barcode || "";
     if (mTitle) mTitle.innerText = `Kemaskini Data ${type === 'MURID' ? 'Murid' : 'Staf'}`;
+
+    // Handle Image Preview for EXISTING record
+    if (previewImg && placeholder) {
+        if (data.photo_url) {
+            previewImg.src = data.photo_url;
+            previewImg.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+        } else {
+            previewImg.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+        }
+    }
 
     if (type === 'MURID') {
         id('student-only-fields')?.classList.remove('hidden');
@@ -1216,6 +1223,7 @@ window.editRecord = async (type, recordId) => {
         if (id('form-staff-type')) id('form-staff-type').value = data.staff_type || "";
         if (id('form-title')) id('form-title').value = data.honorific_title || "";
     }
+    
     id('data-modal')?.classList.remove('hidden');
 };
 
@@ -1224,7 +1232,6 @@ window.deleteRecord = async (table, recordId) => {
     if (!confirm(warningMsg)) return;
 
     try {
-        // 1. Fetch record details for storage cleanup
         const { data: record, error: fetchErr } = await supabase
             .from(table)
             .select('barcode, photo_url')
@@ -1233,28 +1240,23 @@ window.deleteRecord = async (table, recordId) => {
 
         if (fetchErr) throw fetchErr;
 
-        // 2. Delete Image from Storage
         if (record && record.photo_url) {
             const bucket = table === 'students' ? 'students' : 'teachers';
             const filePath = `${currentSchoolCode}/${record.barcode}.jpg`;
             await supabase.storage.from(bucket).remove([filePath]);
         }
 
-        // 3. Delete Database Record
         const { error: dbErr } = await supabase.from(table).delete().eq('id', recordId);
         if (dbErr) throw dbErr;
 
         alert("Rekod berjaya dipadamkan.");
 
-        // 4. CRITICAL: REFRESH DATA ARRAYS
-        // This ensures the local memory is synced with the database
         if (table === 'students') {
-            await refreshClassDropdown(); // Re-fetches allStudents
+            await refreshClassDropdown(); 
         } else {
-            await refreshStaffTypeDropdown(); // Re-fetches allStaff
+            await refreshStaffTypeDropdown();
         }
 
-        // 5. Re-render the management table immediately
         loadManagementList();
 
     } catch (err) {
@@ -1263,16 +1265,47 @@ window.deleteRecord = async (table, recordId) => {
     }
 };
 
-const closeModalBtn = id('close-modal');
-if (closeModalBtn) closeModalBtn.onclick = () => id('data-modal')?.classList.add('hidden');
+// ==========================================
+// --- UI EVENTS & MODAL CONTROL ---
+// ==========================================
 
-// --- EVENTS ---
+// Master Close function
+window.closeDataModal = () => {
+    const modal = id('data-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        id('data-form')?.reset();
+        
+        const img = id('preview-img');
+        const placeholder = id('preview-placeholder');
+        if (img) {
+            img.src = "";
+            img.classList.add('hidden');
+        }
+        if (placeholder) placeholder.classList.remove('hidden');
+        
+        editingId = null;
+    }
+};
+
+// 1. Link the 'X' button
+const closeX = id('close-modal-x');
+if (closeX) closeX.onclick = window.closeDataModal;
+
+// 2. Global click listener to close modal on background click
+window.addEventListener('click', (e) => {
+    const modal = id('data-modal');
+    if (e.target === modal) window.closeDataModal();
+});
+
+// 3. Table Filtering & Searching
 if (id('class-dropdown')) id('class-dropdown').onchange = renderMuridTable;
 if (id('student-search-input')) id('student-search-input').oninput = renderMuridTable;
 if (id('manage-class-dropdown')) id('manage-class-dropdown').onchange = () => loadManagementList();
 if (id('manage-staff-type-filter')) id('manage-staff-type-filter').onchange = () => loadManagementList();
 if (id('manage-search-input')) id('manage-search-input').oninput = () => loadManagementList();
 
+// 4. Teacher/Staff Filter Buttons
 const guruFilterGroup = id('guru-filter-group');
 if (guruFilterGroup) {
     guruFilterGroup.onclick = (e) => {
@@ -1283,18 +1316,6 @@ if (guruFilterGroup) {
         }
     };
 }
-
-// Fungsi untuk tutup modal edit
-window.closeEditModal = () => {
-    const modal = id('data-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        // Reset form jika perlu supaya data lama tak tersangkut
-        id('data-form').reset();
-        id('preview-img').classList.add('hidden');
-        id('preview-placeholder').classList.remove('hidden');
-    }
-};
 
 // --- EXPORT LOGIC ---
 function getDynamicFilename(baseName, includeClass = false) {
@@ -1482,6 +1503,41 @@ window.exportStatsPDF = () => {
 
     doc.save(`${window.currentStatsTitle}.pdf`);
 };
+    
+// Link the 'X' button without declaring a new variable
+if (id('close-modal-x')) {
+    id('close-modal-x').onclick = window.closeDataModal;
+}
+
+// Close when clicking the dark background overlay
+window.addEventListener('click', (event) => {
+    const modal = id('data-modal');
+    if (event.target === modal) window.closeDataModal();
+});
+
+// Close modal when pressing 'Escape' key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') window.closeDataModal();
+});
+
+// Close when clicking the dark background overlay
+window.addEventListener('click', (event) => {
+    // Check for Data Modal
+    const dataModal = id('data-modal');
+    if (event.target === dataModal) window.closeDataModal();
+
+    // Check for Stats Modal
+    const statsModal = id('stats-modal');
+    if (event.target === statsModal) window.closeStatsModal();
+});
+
+// Close modal when pressing 'Escape' key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        window.closeDataModal();
+        window.closeStatsModal();
+    }
+});
 
 // --- WINDOW EXPORTS ---
 window.handleCSVImportClick = () => id('csv-upload')?.click();
