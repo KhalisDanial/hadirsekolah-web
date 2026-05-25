@@ -1462,34 +1462,60 @@ function exportPDF(tableId, baseName, includeClass) {
 }
 
 // --- REALTIME ---
+let realtimeDebounceTimer;
+
+// Helper to prevent API spam during heavy morning traffic
+function debounceUpdate(callback, delay = 500) {
+    clearTimeout(realtimeDebounceTimer);
+    realtimeDebounceTimer = setTimeout(() => {
+        callback();
+    }, delay);
+}
+
 function setupRealtime() {
     console.log("Setting up Realtime subscriptions...");
 
     const getTodayStr = () => id('date-picker')?.value || new Date().toISOString().split('T')[0];
 
+    // Student Attendance: Listen to ALL events (*), debounced
     supabase.channel('student-attendance-channel').on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'students_attendance', filter: `school_id=eq.${currentSchoolId}` }, 
-        () => { if (getTodayStr() === new Date().toISOString().split('T')[0]) fetchMuridAttendance(); }
-    ).subscribe();
-
-    supabase.channel('staff-attendance-channel').on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'teacher_attendance', filter: `school_id=eq.${currentSchoolId}` }, 
-        () => { if (getTodayStr() === new Date().toISOString().split('T')[0]) loadGuruData(); }
-    ).subscribe();
-
-    supabase.channel('student-profiles-channel').on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'students', filter: `school_id=eq.${currentSchoolId}` }, 
-        async () => {
-            await refreshClassDropdown();
-            if (currentManageView === 'MURID') loadManagementList();
+        { event: '*', schema: 'public', table: 'students_attendance', filter: `school_id=eq.${currentSchoolId}` }, 
+        () => { 
+            if (getTodayStr() === new Date().toISOString().split('T')[0]) {
+                debounceUpdate(fetchMuridAttendance);
+            }
         }
     ).subscribe();
 
+    // Staff Attendance: Listen to ALL events (*), debounced
+    supabase.channel('staff-attendance-channel').on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'teacher_attendance', filter: `school_id=eq.${currentSchoolId}` }, 
+        () => { 
+            if (getTodayStr() === new Date().toISOString().split('T')[0]) {
+                debounceUpdate(loadGuruData);
+            }
+        }
+    ).subscribe();
+
+    // Student Profiles (Debounced)
+    supabase.channel('student-profiles-channel').on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'students', filter: `school_id=eq.${currentSchoolId}` }, 
+        () => {
+            debounceUpdate(async () => {
+                await refreshClassDropdown();
+                if (currentManageView === 'MURID') loadManagementList();
+            });
+        }
+    ).subscribe();
+
+    // Staff Profiles (Debounced)
     supabase.channel('staff-profiles-channel').on('postgres_changes', 
         { event: '*', schema: 'public', table: 'teachers', filter: `school_id=eq.${currentSchoolId}` }, 
-        async () => {
-            await refreshStaffTypeDropdown();
-            if (currentManageView === 'STAFF') loadManagementList();
+        () => {
+            debounceUpdate(async () => {
+                await refreshStaffTypeDropdown();
+                if (currentManageView === 'STAFF') loadManagementList();
+            });
         }
     ).subscribe();
 }
