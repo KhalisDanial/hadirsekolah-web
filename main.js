@@ -393,19 +393,38 @@ async function fetchMuridAttendance() {
 
     // Process data to inject "Late" status based on dynamic schoolStartTime
     const processedData = (data || []).map(att => {
-        const scanDate = safeParseDate(att.created_at);
-        
         let scanTimeDisplay = "Ralat Masa";
         let scanTotalMinutes = 0;
 
-        if (!isNaN(scanDate.getTime())) {
-            scanTimeDisplay = scanDate.toLocaleTimeString('en-GB', { 
-                hour12: false, 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-            });
-            scanTotalMinutes = (scanDate.getHours() * 60) + scanDate.getMinutes();
+        // 1. Prioritize explicit text time strings if they exist (Aligning with Guru/AKP architecture)
+        const explicitTime = att.clock_in || att.time || att.scan_time;
+
+        if (explicitTime && typeof explicitTime === 'string' && explicitTime.includes(':')) {
+            scanTimeDisplay = explicitTime;
+            const parts = explicitTime.split(':');
+            scanTotalMinutes = (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+        } else {
+            // 2. Fallback to parsing created_at timestamp
+            const scanDate = safeParseDate(att.created_at);
+            
+            if (!isNaN(scanDate.getTime())) {
+                scanTimeDisplay = scanDate.toLocaleTimeString('en-GB', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit' 
+                });
+                scanTotalMinutes = (scanDate.getHours() * 60) + scanDate.getMinutes();
+            } 
+            // 3. Ultimate manual fallback: extract HH:MM:SS directly from string if safeParseDate fails due to browser quirks
+            else if (att.created_at && typeof att.created_at === 'string') {
+                const timeMatch = att.created_at.match(/(\d{2}):(\d{2}):(\d{2})/);
+                if (timeMatch) {
+                    scanTimeDisplay = timeMatch[0];
+                    const parts = timeMatch[0].split(':');
+                    scanTotalMinutes = (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+                }
+            }
         }
 
         const startParts = (schoolStartTime || "07:30:00").split(':');
