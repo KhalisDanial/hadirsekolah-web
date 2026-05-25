@@ -356,24 +356,34 @@ async function fetchMuridAttendance() {
 
     // Process data to inject "Late" status based on dynamic schoolStartTime
     const processedData = (data || []).map(att => {
-        const scanDate = new Date(att.created_at);
-        
-        // 1. Extract string format for UI display ONLY
-        const scanTimeDisplay = scanDate.toLocaleTimeString('en-GB', { 
-            hour12: false, 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit' 
-        });
+        // Fallback parser: Handles standard ISO and alternative space-separated formats safely
+        let scanDate = new Date(att.created_at);
+        if (isNaN(scanDate.getTime()) && att.created_at) {
+            // Fixes potential "Invalid Date" from space-separated DB strings
+            scanDate = new Date(att.created_at.replace(' ', 'T'));
+        }
 
-        // 2. Safe numerical calculation (convert everything to total minutes from midnight)
-        const scanTotalMinutes = (scanDate.getHours() * 60) + scanDate.getMinutes();
+        let scanTimeDisplay = "-";
+        let scanTotalMinutes = 0;
+
+        if (!isNaN(scanDate.getTime())) {
+            scanTimeDisplay = scanDate.toLocaleTimeString('en-GB', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            scanTotalMinutes = (scanDate.getHours() * 60) + scanDate.getMinutes();
+        } else {
+            console.error("Failed to parse student timestamp:", att.created_at);
+            scanTimeDisplay = "Ralat Masa"; 
+        }
         
-        // Parse the dynamic school start time safely (e.g., "07:30:00" -> 450 minutes)
+        // Convert school start time rule to total minutes (e.g., "07:30:00" -> 450)
         const startParts = (schoolStartTime || "07:30:00").split(':');
         const startTotalMinutes = (parseInt(startParts[0], 10) * 60) + parseInt(startParts[1], 10);
 
-        // Determine status numerically (421 minutes > 450 minutes is false)
+        // Determine status numerically (e.g., 1375 mins at 10:55 PM > 450 mins -> LEWAT)
         const status = scanTotalMinutes > startTotalMinutes ? 'LEWAT' : 'HADIR';
 
         return {
@@ -529,23 +539,29 @@ async function loadGuruData() {
     
     // 3. Process attendance to inject "Late" status based on dynamic schoolStartTime
     const processedAttendance = (att || []).map(satt => {
-        const staffScanDate = new Date(satt.created_at);
-        
-        // 1. Extract string format for UI display ONLY
-        const staffScanTimeDisplay = staffScanDate.toLocaleTimeString('en-GB', { 
-            hour12: false, 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit' 
-        });
+        let staffScanDate = new Date(satt.created_at);
+        if (isNaN(staffScanDate.getTime()) && satt.created_at) {
+            staffScanDate = new Date(satt.created_at.replace(' ', 'T'));
+        }
 
-        // 2. Safe numerical calculation
-        const scanTotalMinutes = (staffScanDate.getHours() * 60) + staffScanDate.getMinutes();
+        let staffScanTimeDisplay = "-";
+        let scanTotalMinutes = 0;
+
+        if (!isNaN(staffScanDate.getTime())) {
+            staffScanTimeDisplay = staffScanDate.toLocaleTimeString('en-GB', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            scanTotalMinutes = (staffScanDate.getHours() * 60) + staffScanDate.getMinutes();
+        } else {
+            staffScanTimeDisplay = "Ralat Masa";
+        }
         
         const startParts = (schoolStartTime || "07:30:00").split(':');
         const startTotalMinutes = (parseInt(startParts[0], 10) * 60) + parseInt(startParts[1], 10);
 
-        // Determine status numerically
         const status = scanTotalMinutes > startTotalMinutes ? 'LEWAT' : 'HADIR';
 
         return {
