@@ -21,6 +21,43 @@ let schoolStartTime = "07:30:00";
 // 3. Utility Function
 const id = (name) => document.getElementById(name);
 
+
+// Robust date normalizer to handle PostgreSQL microsecond precision & spaces safely
+function safeParseDate(dateStr) {
+    if (!dateStr) return new Date(NaN);
+    
+    let d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+    
+    // Convert space separator to standard 'T' and strip microseconds down to milliseconds
+    let normalized = dateStr.trim().replace(' ', 'T').replace(/\.(\d{3})\d+/, '.$1');
+    
+    d = new Date(normalized);
+    if (!isNaN(d.getTime())) return d;
+    
+    // Ultimate manual parse fallback
+    const t = normalized.split('T');
+    if (t.length === 2) {
+        const dateParts = t[0].split('-');
+        const timeParts = t[1].split(':');
+        if (dateParts.length === 3 && timeParts.length >= 2) {
+            const year = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1;
+            const day = parseInt(dateParts[2], 10);
+            const hour = parseInt(timeParts[0], 10);
+            const minute = parseInt(timeParts[1], 10);
+            const second = timeParts[2] ? parseInt(timeParts[2], 10) : 0;
+            
+            if (normalized.includes('Z') || normalized.includes('+00')) {
+                return new Date(Date.UTC(year, month, day, hour, minute, second));
+            } else {
+                return new Date(year, month, day, hour, minute, second);
+            }
+        }
+    }
+    return new Date(NaN);
+}
+
 // ==========================================
 // --- AUTH & SESSION MANAGEMENT ---
 // ==========================================
@@ -356,24 +393,24 @@ async function fetchMuridAttendance() {
 
     // Process data to inject "Late" status based on dynamic schoolStartTime
     const processedData = (data || []).map(att => {
-        const scanDate = new Date(att.created_at);
+        const scanDate = safeParseDate(att.created_at);
         
-        // 1. Extract string format for UI display ONLY
-        const scanTimeDisplay = scanDate.toLocaleTimeString('en-GB', { 
-            hour12: false, 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit' 
-        });
+        let scanTimeDisplay = "Ralat Masa";
+        let scanTotalMinutes = 0;
 
-        // 2. Safe numerical calculation (convert everything to total minutes from midnight)
-        const scanTotalMinutes = (scanDate.getHours() * 60) + scanDate.getMinutes();
-        
-        // Parse the dynamic school start time safely (e.g., "07:30:00" -> 450 minutes)
+        if (!isNaN(scanDate.getTime())) {
+            scanTimeDisplay = scanDate.toLocaleTimeString('en-GB', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            scanTotalMinutes = (scanDate.getHours() * 60) + scanDate.getMinutes();
+        }
+
         const startParts = (schoolStartTime || "07:30:00").split(':');
         const startTotalMinutes = (parseInt(startParts[0], 10) * 60) + parseInt(startParts[1], 10);
 
-        // Determine status numerically (421 minutes > 450 minutes is false)
         const status = scanTotalMinutes > startTotalMinutes ? 'LEWAT' : 'HADIR';
 
         return {
@@ -383,10 +420,7 @@ async function fetchMuridAttendance() {
         };
     });
 
-    // Sort by barcode for a consistent table view
     todayAttendance = processedData.sort((a, b) => (a.barcode || "").localeCompare(b.barcode || ""));
-    
-    // Refresh the UI
     if (typeof renderMuridTable === 'function') renderMuridTable();
 }
 
@@ -504,7 +538,6 @@ async function loadGuruData() {
     
     console.log("Searching Staff records for date:", selectedDate);
 
-    // 1. Fetch all staff members for this school
     const { data: staff, error: staffError } = await supabase
         .from('teachers')
         .select('*')
@@ -515,7 +548,6 @@ async function loadGuruData() {
         return;
     }
 
-    // 2. Fetch attendance records for the selected date
     const { data: att, error: attError } = await supabase
         .from('teacher_attendance')
         .select('*')
@@ -527,25 +559,31 @@ async function loadGuruData() {
         return;
     }
     
-    // 3. Process attendance to inject "Late" status based on dynamic schoolStartTime
     const processedAttendance = (att || []).map(satt => {
-        const staffScanDate = new Date(satt.created_at);
-        
-        // 1. Extract string format for UI display ONLY
-        const staffScanTimeDisplay = staffScanDate.toLocaleTimeString('en-GB', { 
-            hour12: false, 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit' 
-        });
+        let scanTotalMinutes = 0;
+        let staffScanTimeDisplay = "-";
 
-        // 2. Safe numerical calculation
-        const scanTotalMinutes = (staffScanDate.getHours() * 60) + staffScanDate.getMinutes();
+        // Prioritize explicit clock_in text strings to avoid timezone shift variations entirely
+        if (satt.clock_in && satt.clock_in.includes(':')) {
+            staffScanTimeDisplay = satt.clock_in;
+            const parts = satt.clock_in.split(':');
+            scanTotalMinutes = (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+        } else {
+            const staffScanDate = safeParseDate(satt.created_at);
+            if (!isNaN(staffScanDate.getTime())) {
+                staffScanTimeDisplay = staffScanDate.toLocaleTimeString('en-GB', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit' 
+                });
+                scanTotalMinutes = (staffScanDate.getHours() * 60) + staffScanDate.getMinutes();
+            }
+        }
         
         const startParts = (schoolStartTime || "07:30:00").split(':');
         const startTotalMinutes = (parseInt(startParts[0], 10) * 60) + parseInt(startParts[1], 10);
 
-        // Determine status numerically
         const status = scanTotalMinutes > startTotalMinutes ? 'LEWAT' : 'HADIR';
 
         return {
@@ -555,12 +593,9 @@ async function loadGuruData() {
         };
     });
 
-    // 4. Update global variables
-    // Sorting staff by name for a consistent UI experience
     allStaff = (staff || []).sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
     todayStaffAttendance = processedAttendance;
 
-    // 5. Refresh the UI
     if (typeof renderGuruTable === 'function') renderGuruTable();
 }
 
