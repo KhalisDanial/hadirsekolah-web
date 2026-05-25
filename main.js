@@ -356,22 +356,30 @@ async function fetchMuridAttendance() {
 
     // Process data to inject "Late" status based on dynamic schoolStartTime
     const processedData = (data || []).map(att => {
-        // Extract time from created_at (HH:MM:SS)
-        const scanTime = new Date(att.created_at).toLocaleTimeString('en-GB', { 
+        const scanDate = new Date(att.created_at);
+        
+        // 1. Extract string format for UI display ONLY
+        const scanTimeDisplay = scanDate.toLocaleTimeString('en-GB', { 
             hour12: false, 
             hour: '2-digit', 
             minute: '2-digit', 
             second: '2-digit' 
         });
 
-        // Determine status: If scanTime is later than schoolStartTime, mark as LEWAT
-        // Note: schoolStartTime is the global variable we updated in initializeDashboard
-        const status = scanTime > schoolStartTime ? 'LEWAT' : 'HADIR';
+        // 2. Safe numerical calculation (convert everything to total minutes from midnight)
+        const scanTotalMinutes = (scanDate.getHours() * 60) + scanDate.getMinutes();
+        
+        // Parse the dynamic school start time safely (e.g., "07:30:00" -> 450 minutes)
+        const startParts = (schoolStartTime || "07:30:00").split(':');
+        const startTotalMinutes = (parseInt(startParts[0], 10) * 60) + parseInt(startParts[1], 10);
+
+        // Determine status numerically (421 minutes > 450 minutes is false)
+        const status = scanTotalMinutes > startTotalMinutes ? 'LEWAT' : 'HADIR';
 
         return {
             ...att,
             computed_status: status,
-            scan_time_display: scanTime
+            scan_time_display: scanTimeDisplay
         };
     });
 
@@ -521,21 +529,29 @@ async function loadGuruData() {
     
     // 3. Process attendance to inject "Late" status based on dynamic schoolStartTime
     const processedAttendance = (att || []).map(satt => {
-        // Extract time from created_at (HH:MM:SS)
-        const staffScanTime = new Date(satt.created_at).toLocaleTimeString('en-GB', { 
+        const staffScanDate = new Date(satt.created_at);
+        
+        // 1. Extract string format for UI display ONLY
+        const staffScanTimeDisplay = staffScanDate.toLocaleTimeString('en-GB', { 
             hour12: false, 
             hour: '2-digit', 
             minute: '2-digit', 
             second: '2-digit' 
         });
 
-        // Determine status: Compare against the global schoolStartTime
-        const status = staffScanTime > schoolStartTime ? 'LEWAT' : 'HADIR';
+        // 2. Safe numerical calculation
+        const scanTotalMinutes = (staffScanDate.getHours() * 60) + staffScanDate.getMinutes();
+        
+        const startParts = (schoolStartTime || "07:30:00").split(':');
+        const startTotalMinutes = (parseInt(startParts[0], 10) * 60) + parseInt(startParts[1], 10);
+
+        // Determine status numerically
+        const status = scanTotalMinutes > startTotalMinutes ? 'LEWAT' : 'HADIR';
 
         return {
             ...satt,
             computed_status: status,
-            scan_time_display: staffScanTime
+            scan_time_display: staffScanTimeDisplay
         };
     });
 
