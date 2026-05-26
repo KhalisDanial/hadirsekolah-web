@@ -333,11 +333,14 @@ async function initializeDashboard(userId) {
     id('dashboard-container')?.classList.remove('hidden');
 
     // 6. Initial Data Load
+    // Fetch profiles (lists) FIRST so the arrays are fully populated
     await Promise.all([
         refreshClassDropdown(),
-        refreshStaffTypeDropdown(),
-        fetchMuridAttendance()
+        refreshStaffTypeDropdown()
     ]);
+    
+    // THEN fetch attendance and render the table safely
+    await fetchMuridAttendance();
     
     if (typeof loadGuruData === 'function') await loadGuruData();
     if (typeof setupRealtime === 'function') setupRealtime();
