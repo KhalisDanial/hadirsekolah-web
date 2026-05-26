@@ -58,6 +58,15 @@ function safeParseDate(dateStr) {
     return new Date(NaN);
 }
 
+// Helper to get local date in YYYY-MM-DD format (Fixes UTC timezone offset issues in Malaysia)
+function getLocalTodayISO() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // ==========================================
 // --- AUTH & SESSION MANAGEMENT ---
 // ==========================================
@@ -299,7 +308,7 @@ async function initializeDashboard(userId) {
 
     // 4. Date Picker Logic
     const datePicker = id('date-picker');
-    const todayISO = new Date().toISOString().split('T')[0];
+    const todayISO = getLocalTodayISO(); // <-- Use local helper instead of toISOString()
 
     if (datePicker) {
         datePicker.value = todayISO;
@@ -378,7 +387,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
 async function fetchMuridAttendance() {
     const datePicker = id('date-picker');
-    const selectedDate = datePicker ? datePicker.value : new Date().toISOString().split('T')[0];
+    const selectedDate = datePicker ? datePicker.value : getLocalTodayISO();
     
     const { data, error } = await supabase
         .from('students_attendance')
@@ -535,7 +544,7 @@ window.filterByStatus = (status) => {
 // --- GURU/AKP LOGIC ---
 async function loadGuruData() {
     const datePicker = id('date-picker');
-    const selectedDate = datePicker ? datePicker.value : new Date().toISOString().split('T')[0];
+    const selectedDate = datePicker ? datePicker.value : getLocalTodayISO();
     
     console.log("Searching Staff records for date:", selectedDate);
 
@@ -1475,13 +1484,13 @@ function debounceUpdate(callback, delay = 500) {
 function setupRealtime() {
     console.log("Setting up Realtime subscriptions...");
 
-    const getTodayStr = () => id('date-picker')?.value || new Date().toISOString().split('T')[0];
+    const getTodayStr = () => id('date-picker')?.value || getLocalTodayISO();
 
     // Student Attendance: Listen to ALL events (*), debounced
     supabase.channel('student-attendance-channel').on('postgres_changes', 
         { event: '*', schema: 'public', table: 'students_attendance', filter: `school_id=eq.${currentSchoolId}` }, 
         () => { 
-            if (getTodayStr() === new Date().toISOString().split('T')[0]) {
+            if (getTodayStr() === getLocalTodayISO()) { // <-- Now safely compares MYT to MYT
                 debounceUpdate(fetchMuridAttendance);
             }
         }
@@ -1491,7 +1500,7 @@ function setupRealtime() {
     supabase.channel('staff-attendance-channel').on('postgres_changes', 
         { event: '*', schema: 'public', table: 'teacher_attendance', filter: `school_id=eq.${currentSchoolId}` }, 
         () => { 
-            if (getTodayStr() === new Date().toISOString().split('T')[0]) {
+            if (getTodayStr() === getLocalTodayISO()) { // <-- Now safely compares MYT to MYT
                 debounceUpdate(loadGuruData);
             }
         }
