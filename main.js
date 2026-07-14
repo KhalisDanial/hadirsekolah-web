@@ -1495,7 +1495,12 @@ function setupRealtime() {
         { event: '*', schema: 'public', table: 'students_attendance', filter: `school_id=eq.${currentSchoolId}` }, 
         () => { 
             if (getTodayStr() === getLocalTodayISO()) { // <-- Now safely compares MYT to MYT
-                debounceUpdate(fetchMuridAttendance);
+                debounceUpdate(async () => {
+                    // 1. Fetch the latest attendance data first
+                    await fetchMuridAttendance(); 
+                    // 2. Then instantly update the RMT view with the new data
+                    if (typeof window.renderRMTAttendance === 'function') window.renderRMTAttendance();
+                });
             }
         }
     ).subscribe();
@@ -1517,6 +1522,10 @@ function setupRealtime() {
             debounceUpdate(async () => {
                 await refreshClassDropdown();
                 if (currentManageView === 'MURID') loadManagementList();
+                
+                // TAMBAH BARIS INI: Kemaskini paparan RMT jika ada perubahan data murid (contoh: status is_rmt diubah)
+                if (typeof window.renderRMTPengurusan === 'function') window.renderRMTPengurusan();
+                if (typeof window.renderRMTAttendance === 'function') window.renderRMTAttendance();
             });
         }
     ).subscribe();
