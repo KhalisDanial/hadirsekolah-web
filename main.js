@@ -1729,14 +1729,22 @@ window.renderRMTAttendance = () => {
     const selectedClass = classDropdown ? classDropdown.value : "";
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
 
-    // FILTER 1: Only students with is_rmt = true
+    // FILTER 1: Hanya murid yang mendapat RMT (is_rmt === true)
     const rmtStudents = allStudents.filter(s => s.is_rmt === true);
     
-    // FILTER 2: Apply Class and Search filters
-    const filtered = rmtStudents.filter(s => 
-        (selectedClass === "" || s.class_name_full === selectedClass) &&
-        (s.name.toLowerCase().includes(searchTerm))
-    ).sort((a, b) => (a.class_name_full || "").localeCompare(b.class_name_full || ""));
+    // FILTER 2 & PENAPISAN CARIAN: Padankan Kelas, Nama, atau Barcode
+    const filtered = rmtStudents.filter(s => {
+        const matchClass = (selectedClass === "" || s.class_name_full === selectedClass);
+        const matchName = s.name.toLowerCase().includes(searchTerm);
+        const matchBarcode = s.barcode ? s.barcode.toString().toLowerCase().includes(searchTerm) : false;
+        
+        return matchClass && (matchName || matchBarcode);
+    }).sort((a, b) => {
+        // SUSUNAN: Mengikut tertib nombor/siri Barcode
+        const barcodeA = a.barcode ? a.barcode.toString() : "";
+        const barcodeB = b.barcode ? b.barcode.toString() : "";
+        return barcodeA.localeCompare(barcodeB, undefined, { numeric: true, sensitivity: 'base' });
+    });
 
     const listHadir = [];
     const listAbsent = [];
@@ -1758,20 +1766,22 @@ window.renderRMTAttendance = () => {
         rowsHtml += `<tr>
             <td>${visibleIndex++}</td>
             <td>${s.name}</td>
+            <td><strong>${s.barcode || '-'}</strong></td> <!-- Kolum Barcode baru -->
             <td>${s.class_name_full || '-'}</td>
             <td>${timeDisplay}</td>
             <td>${statusBadge}</td>
         </tr>`;
     });
 
-    tbody.innerHTML = rowsHtml || '<tr><td colspan="5" style="text-align:center;">Tiada data murid RMT untuk dipaparkan.</td></tr>';
+    // Ubah colspan ke 6 disebabkan penambahan kolum baru
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="6" style="text-align:center;">Tiada data murid RMT untuk dipaparkan.</td></tr>';
     
-    // Update Stats Numbers
+    // Kemaskini statistik kad di atas
     if(document.getElementById('rmt-total')) document.getElementById('rmt-total').innerText = filtered.length;
     if(document.getElementById('rmt-hadir')) document.getElementById('rmt-hadir').innerText = listHadir.length;
     if(document.getElementById('rmt-absent')) document.getElementById('rmt-absent').innerText = listAbsent.length;
 
-    // Attach Modal Popups logic
+    // Kekalkan logik modal sedia ada
     const setupRMTClick = (statId, title, data) => {
         const target = document.getElementById(statId);
         const container = target?.closest('.stat-clickable'); 
