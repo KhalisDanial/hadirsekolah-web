@@ -385,6 +385,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
         if (targetSectionId === 'manage-section' && typeof switchManageView === 'function') switchManageView('MURID');
         if (targetSectionId === 'guru-section' && typeof renderGuruTable === 'function') renderGuruTable();
         if (targetSectionId === 'murid-section' && typeof renderMuridTable === 'function') renderMuridTable();
+        if (targetSectionId === 'rmt-section' && typeof switchRMTView === 'function') switchRMTView('KEHADIRAN');
     });
 });
 
@@ -1668,6 +1669,8 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+
+
 // --- WINDOW EXPORTS ---
 window.handleCSVImportClick = () => id('csv-upload')?.click();
 window.handleCSVImport = handleCSVImport;
@@ -1675,3 +1678,156 @@ window.showImportHelp = showImportHelp;
 window.downloadTemplate = window.downloadTemplate || downloadTemplate; // In case already assigned
 window.switchManageView = window.switchManageView || switchManageView;
 window.loadManagementList = window.loadManagementList || loadManagementList;
+
+// ==========================================
+// --- MODUL RMT (RANCANGAN MAKANAN TAMBAHAN) ---
+// ==========================================
+
+window.switchRMTView = (view) => {
+    // 1. Swap Tabs UI
+    const tabKehadiran = document.getElementById('view-rmt-kehadiran-tab');
+    const tabPengurusan = document.getElementById('view-rmt-pengurusan-tab');
+    if(tabKehadiran) tabKehadiran.classList.toggle('active', view === 'KEHADIRAN');
+    if(tabPengurusan) tabPengurusan.classList.toggle('active', view === 'PENGURUSAN');
+    
+    // 2. Toggle Sections
+    const secKehadiran = document.getElementById('rmt-kehadiran-view');
+    const secPengurusan = document.getElementById('rmt-pengurusan-view');
+    if(secKehadiran) secKehadiran.classList.toggle('hidden', view !== 'KEHADIRAN');
+    if(secPengurusan) secPengurusan.classList.toggle('hidden', view !== 'PENGURUSAN');
+
+    // 3. Populate Dropdowns (Syncs with your existing allStudents data)
+    const classes = [...new Set(allStudents.map(s => s.class_name_full))].filter(Boolean).sort();
+    const optionsHtml = '<option value="">Semua Kelas</option>' + classes.map(c => `<option value="${c}">${c}</option>`).join('');
+    
+    if (view === 'KEHADIRAN') {
+        const drop = document.getElementById('rmt-class-dropdown');
+        if(drop && drop.options.length <= 1) drop.innerHTML = optionsHtml;
+        window.renderRMTAttendance();
+    } else {
+        const drop = document.getElementById('rmt-manage-class-dropdown');
+        if(drop && drop.options.length <= 1) drop.innerHTML = optionsHtml;
+        window.renderRMTPengurusan();
+    }
+};
+
+window.renderRMTAttendance = () => {
+    const classDropdown = document.getElementById('rmt-class-dropdown');
+    const searchInput = document.getElementById('rmt-search-input');
+    const tbody = document.getElementById('rmt-kehadiran-list-body');
+    if (!tbody) return;
+
+    const selectedClass = classDropdown ? classDropdown.value : "";
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+
+    // FILTER 1: Only students with is_rmt = true
+    const rmtStudents = allStudents.filter(s => s.is_rmt === true);
+    
+    // FILTER 2: Apply Class and Search filters
+    const filtered = rmtStudents.filter(s => 
+        (selectedClass === "" || s.class_name_full === selectedClass) &&
+        (s.name.toLowerCase().includes(searchTerm))
+    ).sort((a, b) => (a.class_name_full || "").localeCompare(b.class_name_full || ""));
+
+    const listHadir = [];
+    const listAbsent = [];
+    let rowsHtml = '';
+    let visibleIndex = 1;
+    
+    filtered.forEach((s) => {
+        const record = todayAttendance.find(a => a.student_id === s.id);
+        const isHadir = !!record;
+        
+        if (isHadir) listHadir.push(s);
+        else listAbsent.push(s);
+
+        const statusBadge = isHadir 
+            ? '<span class="badge success">Hadir</span>'
+            : '<span class="badge danger">Tidak Hadir</span>';
+        const timeDisplay = record ? record.scan_time_display : '-';
+
+        rowsHtml += `<tr>
+            <td>${visibleIndex++}</td>
+            <td>${s.name}</td>
+            <td>${s.class_name_full || '-'}</td>
+            <td>${timeDisplay}</td>
+            <td>${statusBadge}</td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="5" style="text-align:center;">Tiada data murid RMT untuk dipaparkan.</td></tr>';
+    
+    // Update Stats Numbers
+    if(document.getElementById('rmt-total')) document.getElementById('rmt-total').innerText = filtered.length;
+    if(document.getElementById('rmt-hadir')) document.getElementById('rmt-hadir').innerText = listHadir.length;
+    if(document.getElementById('rmt-absent')) document.getElementById('rmt-absent').innerText = listAbsent.length;
+
+    // Attach Modal Popups logic
+    const setupRMTClick = (statId, title, data) => {
+        const target = document.getElementById(statId);
+        const container = target?.closest('.stat-clickable'); 
+        if (container) {
+            container.style.cursor = 'pointer';
+            container.onclick = () => { if (typeof window.openStatsModal === 'function') window.openStatsModal(title, data); };
+        }
+    };
+
+    setupRMTClick('rmt-total', 'Jumlah Murid RMT', filtered);
+    setupRMTClick('rmt-hadir', 'Senarai Hadir RMT', listHadir);
+    setupRMTClick('rmt-absent', 'Senarai Tidak Hadir RMT', listAbsent);
+};
+
+window.renderRMTPengurusan = () => {
+    const classDropdown = document.getElementById('rmt-manage-class-dropdown');
+    const searchInput = document.getElementById('rmt-manage-search-input');
+    const tbody = document.getElementById('rmt-pengurusan-list-body');
+    if (!tbody) return;
+
+    const selectedClass = classDropdown ? classDropdown.value : "";
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+
+    // Show ALL students so teacher can tick them
+    const filtered = allStudents.filter(s => 
+        (selectedClass === "" || s.class_name_full === selectedClass) &&
+        (s.name.toLowerCase().includes(searchTerm))
+    ).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+    let rowsHtml = filtered.map((s, i) => `
+        <tr>
+            <td>${i + 1}</td>
+            <td>${s.name}</td>
+            <td>${s.class_name_full || '-'}</td>
+            <td>
+                <label class="switch" title="Tandakan jika murid ini menerima RMT">
+                    <input type="checkbox" onchange="toggleRMTStatus(${s.id}, this.checked)" ${s.is_rmt ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+            </td>
+        </tr>
+    `).join('');
+
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="4" style="text-align:center;">Tiada data carian.</td></tr>';
+};
+
+window.toggleRMTStatus = async (studentId, isChecked) => {
+    try {
+        // 1. Update the local array instantly to keep UI fast
+        const student = allStudents.find(s => s.id === studentId);
+        if (student) student.is_rmt = isChecked;
+
+        // 2. Update Supabase database seamlessly
+        const { error } = await supabase
+            .from('students')
+            .update({ is_rmt: isChecked })
+            .eq('id', studentId);
+
+        if (error) {
+            // Revert on error
+            if(student) student.is_rmt = !isChecked;
+            window.renderRMTPengurusan();
+            throw error;
+        }
+    } catch (err) {
+        alert("Gagal menyimpan status RMT: " + err.message);
+    }
+};

@@ -32,7 +32,8 @@
                 <ul>
                     <li class="nav-item active" data-section="murid-section">👤 Murid</li>
                     <li class="nav-item" data-section="guru-section">👨‍🏫 Guru/AKP</li>
-                    <li class="nav-item" data-section="manage-section">⚙️ Pengurusan Data</li>
+                    <li class="nav-item" data-section="manage-section">⚙️ Pengurusan Data Pelajar</li>
+                    <li class="nav-item" data-section="rmt-section">🍲 RMT</li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
@@ -170,6 +171,88 @@
                     <tbody id="guru-list-body"></tbody>
                 </table>
             </section>
+
+            <!-- --- SECTION RMT --- -->
+            <section id="rmt-section" class="content-section hidden">
+                <div class="excel-toolbar" style="margin-bottom: 20px;">
+                    <div class="view-selector">
+                        <button class="view-tab active" id="view-rmt-kehadiran-tab" onclick="switchRMTView('KEHADIRAN')">
+                            <i class="fas fa-clipboard-list"></i> Kehadiran RMT
+                        </button>
+                        <button class="view-tab" id="view-rmt-pengurusan-tab" onclick="switchRMTView('PENGURUSAN')">
+                            <i class="fas fa-user-edit"></i> Pengurusan RMT
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 1: KEHADIRAN RMT -->
+                <div id="rmt-kehadiran-view">
+                    <div class="stats-grid clickable-stats">
+                        <div class="card stat-clickable">
+                            <small class="click-hint">Klik untuk Senarai Nama</small>
+                            <div class="stat-value"><span id="rmt-total">0</span></div>
+                            <div class="stat-label">Jumlah Murid RMT</div>
+                        </div>
+                        <div class="card success stat-clickable">
+                            <small class="click-hint">Klik untuk Senarai Nama</small>
+                            <div class="stat-value"><span id="rmt-hadir">0</span></div>
+                            <div class="stat-label">Hadir RMT</div>
+                        </div>
+                        <div class="card danger stat-clickable">
+                            <small class="click-hint">Klik untuk Senarai Nama</small>
+                            <div class="stat-value"><span id="rmt-absent">0</span></div>
+                            <div class="stat-label">Tidak Hadir RMT</div>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <div class="search-group">
+                            <select id="rmt-class-dropdown" onchange="renderRMTAttendance()">
+                                <option value="">Semua Kelas</option>
+                            </select>
+                            <input type="text" id="rmt-search-input" placeholder="Cari Nama Murid RMT..." onkeyup="renderRMTAttendance()">
+                        </div>
+                    </div>
+
+                    <table id="table-rmt-kehadiran">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Nama</th>
+                                <th>Kelas</th>
+                                <th>Masa Imbas</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rmt-kehadiran-list-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- TAB 2: PENGURUSAN RMT (LABEL STATUS) -->
+                <div id="rmt-pengurusan-view" class="hidden">
+                    <div class="controls">
+                        <div class="search-group">
+                            <select id="rmt-manage-class-dropdown" onchange="renderRMTPengurusan()">
+                                <option value="">Semua Kelas</option>
+                            </select>
+                            <input type="text" id="rmt-manage-search-input" placeholder="Cari Nama..." onkeyup="renderRMTPengurusan()">
+                        </div>
+                    </div>
+
+                    <table id="table-rmt-pengurusan">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Nama</th>
+                                <th>Kelas</th>
+                                <th>Status Penerima RMT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rmt-pengurusan-list-body"></tbody>
+                    </table>
+                </div>
+            </section>            
+
             <section id="manage-section" class="content-section hidden">
                 <div class="section-header-manage">
                     <div class="main-title">
