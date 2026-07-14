@@ -1805,16 +1805,20 @@ window.renderRMTPengurusan = () => {
     const selectedClass = classDropdown ? classDropdown.value : "";
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
 
-    // Show ALL students so teacher can tick them
-    const filtered = allStudents.filter(s => 
-        (selectedClass === "" || s.class_name_full === selectedClass) &&
-        (s.name.toLowerCase().includes(searchTerm))
-    ).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    // Show ALL students so teacher can toggle their status
+    const filtered = allStudents.filter(s => {
+        const matchClass = (selectedClass === "" || s.class_name_full === selectedClass);
+        const matchName = s.name.toLowerCase().includes(searchTerm);
+        const matchBarcode = s.barcode ? s.barcode.toString().toLowerCase().includes(searchTerm) : false;
+        
+        return matchClass && (matchName || matchBarcode);
+    }).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
     let rowsHtml = filtered.map((s, i) => `
         <tr>
             <td>${i + 1}</td>
             <td>${s.name}</td>
+            <td><strong>${s.barcode || '-'}</strong></td> <!-- Kolum Barcode baru -->
             <td>${s.class_name_full || '-'}</td>
             <td>
                 <label class="switch" title="Tandakan jika murid ini menerima RMT">
@@ -1825,7 +1829,8 @@ window.renderRMTPengurusan = () => {
         </tr>
     `).join('');
 
-    tbody.innerHTML = rowsHtml || '<tr><td colspan="4" style="text-align:center;">Tiada data carian.</td></tr>';
+    // Colspan diubah ke 5 untuk padanan 5 kolum baru
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="5" style="text-align:center;">Tiada data carian.</td></tr>';
 };
 
 window.toggleRMTStatus = async (studentId, isChecked) => {
