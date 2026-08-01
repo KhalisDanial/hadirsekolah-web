@@ -435,6 +435,49 @@
             </div>
         </div>
     </div>
+
+    <!-- KAD PROFIL MINI STAF -->
+    <div id="staff-card-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 380px; padding: 0; overflow: hidden;">
+            <!-- Butang Tutup (Terapung) -->
+            <button type="button" class="close-modal-btn" onclick="closeStaffCard()" style="position: absolute; right: 15px; top: 15px; color: white; z-index: 10;">&times;</button>
+            
+            <!-- Bahagian Atas Kad (Header - Tema Ungu/Indigo untuk Guru) -->
+            <div style="background: linear-gradient(135deg, #8b5cf6, #5b21b6); padding: 30px 20px 20px; text-align: center; color: white; position: relative;">
+                <img id="staff-card-img" src="default-avatar.png" alt="Profil Staf" 
+                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 15px; background: white;">
+                <h3 id="staff-card-name" style="margin: 0; font-size: 1.2rem; font-weight: 700;">Nama Staf</h3>
+                <span id="staff-card-role" style="display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 8px;">Jawatan</span>
+            </div>
+
+            <!-- Bahagian Bawah Kad (Statistik) -->
+            <div style="padding: 25px 20px; background: white; text-align: center;">
+                <h4 style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Ringkasan Kehadiran Sesi <span id="staff-card-year">2026</span></h4>
+                
+                <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+                    <div>
+                        <div id="staff-card-attend-days" style="font-size: 1.8rem; font-weight: 800; color: #22c55e;">0</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">HARI HADIR</div>
+                    </div>
+                    <div style="width: 1px; background: #e2e8f0;"></div>
+                    <div>
+                        <div id="staff-card-total-days" style="font-size: 1.8rem; font-weight: 800; color: #8b5cf6;">0</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">HARI BEKERJA</div>
+                    </div>
+                </div>
+
+                <!-- Palang Peratusan -->
+                <div style="background: #f1f5f9; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; margin-bottom: 8px;">
+                    <div id="staff-card-progress-bar" style="background: #22c55e; height: 100%; width: 0%; transition: width 0.5s ease-in-out;"></div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span id="staff-card-date-text" style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">Setakat...</span>
+                    <span id="staff-card-percentage" style="font-size: 1.2rem; font-weight: 800; color: #334155;">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
     <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="window.handleCSVImport(event)">
     <script type="module" src="main.js"></script>
 </body>

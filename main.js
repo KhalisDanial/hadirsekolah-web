@@ -688,10 +688,11 @@ function renderGuruTable(roleFilter = 'SEMUA') {
             }
         }
 
+        // UBAH BARIS INI: Tambah class 'clickable-avatar' & 'onclick' untuk memanggil profil staf
         htmlContent += `
             <tr>
                 <td>${visibleIndex++}</td>
-                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'"></td>
+                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img clickable-avatar" onerror="this.src='default-avatar.png'" onclick="openStaffCard(${s.id})" title="Klik untuk lihat Kad Profil"></td>
                 <td>${s.honorific_title || ''} ${s.nama || s.name} ${lateIndicator}</td>
                 <td><code class="barcode-text">${s.barcode}</code></td>
                 <td>${record?.clock_in || '-'}</td>
@@ -1658,6 +1659,10 @@ if (id('close-modal-x')) {
 window.addEventListener('click', (event) => {
     const modal = id('data-modal');
     if (event.target === modal) window.closeDataModal();
+
+    // Letakkan di dalam event listener klik sedia ada:
+    const staffCardModal = id('staff-card-modal');
+    if (event.target === staffCardModal) window.closeStaffCard();
 });
 
 // Close modal when pressing 'Escape' key
@@ -1958,3 +1963,111 @@ window.addEventListener('click', (event) => {
     const cardModal = id('student-card-modal');
     if (event.target === cardModal) window.closeStudentCard();
 });
+
+// ==========================================
+// --- KAD PROFIL MINI STAF (PENGKIRAAN BIJAK) ---
+// ==========================================
+
+window.openStaffCard = async (staffId) => {
+    const staff = allStaff.find(s => s.id === staffId);
+    if (!staff) return;
+
+    // 1. Paparkan Modal & Set Maklumat Asas
+    id('staff-card-modal').classList.remove('hidden');
+    id('staff-card-img').src = staff.photo_url || 'default-avatar.png';
+    
+    const fullName = `${staff.honorific_title || ''} ${staff.nama || staff.name}`.trim();
+    id('staff-card-name').innerText = fullName;
+    id('staff-card-role').innerText = staff.staff_type || 'Tiada Jawatan';
+    
+    // Reset angka sementara menunggu data
+    id('staff-card-attend-days').innerText = '-';
+    id('staff-card-total-days').innerText = '-';
+    id('staff-card-percentage').innerText = 'Kira...';
+    id('staff-card-progress-bar').style.width = '0%';
+
+    const currentYear = new Date().getFullYear();
+    id('staff-card-year').innerText = currentYear;
+    const startDate = `${currentYear}-01-01`;
+
+    try {
+        // 2. Dapatkan jumlah hari staf ini hadir 
+        const { count: staffDays, error: err1 } = await supabase
+            .from('teacher_attendance')
+            .select('*', { count: 'exact', head: true })
+            .eq('teacher_id', staffId)
+            .gte('date', startDate);
+
+        if (err1) throw err1;
+
+        // 3. Dapatkan jumlah Hari Bekerja Sebenar (Kiraan Bijak)
+        const { data: allDates, error: err2 } = await supabase
+            .from('teacher_attendance')
+            .select('date')
+            .eq('school_id', currentSchoolId)
+            .gte('date', startDate);
+
+        if (err2) throw err2;
+
+        let totalWorkDays = 0;
+        
+        if (allDates) {
+            // A. Kumpul jumlah imbasan staf untuk setiap tarikh
+            const dateCounts = {};
+            allDates.forEach(d => {
+                dateCounts[d.date] = (dateCounts[d.date] || 0) + 1;
+            });
+
+            // B. AMBANG MINIMUM (Threshold)
+            // Kira sebagai "Hari Bekerja" HANYA JIKA lebih 5 staf mengimbas pada hari tersebut
+            // Ini untuk menapis staf yang datang sekolah secara sukarela pada hari Sabtu/Ahad
+            const MINIMUM_STAFF_SCANS = 5; 
+
+            // C. Kira tarikh yang melepasi ambang sahaja
+            for (const date in dateCounts) {
+                if (dateCounts[date] >= MINIMUM_STAFF_SCANS) {
+                    totalWorkDays++;
+                }
+            }
+        }
+
+        // 4. Kira Peratusan Kehadiran
+        const attendCount = staffDays || 0;
+        let percentage = 0;
+        if (totalWorkDays > 0) {
+            percentage = Math.round((attendCount / totalWorkDays) * 100);
+            if (percentage > 100) percentage = 100; // Langkah berjaga-jaga
+        }
+
+        // 5. Kemas kini antaramuka dengan data sebenar
+        id('staff-card-attend-days').innerText = attendCount;
+        id('staff-card-total-days').innerText = totalWorkDays;
+        id('staff-card-percentage').innerText = `${percentage}%`;
+        
+        // Animasi peratusan warna
+        const progressBar = id('staff-card-progress-bar');
+        progressBar.style.width = `${percentage}%`;
+        
+        // Tukar warna palang mengikut prestasi (Merah jika < 85%, Hijau jika ok)
+        if (percentage < 85) {
+            progressBar.style.background = '#ef4444'; // Merah
+            id('staff-card-percentage').style.color = '#ef4444';
+        } else {
+            progressBar.style.background = '#22c55e'; // Hijau
+            id('staff-card-percentage').style.color = '#334155';
+        }
+
+        // 6. Tarikh Setakat Hari Ini
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        const todayStr = new Date().toLocaleDateString('ms-MY', options);
+        id('staff-card-date-text').innerText = `Setakat ${todayStr}`;
+
+    } catch (error) {
+        console.error("Ralat memuat turun statistik staf:", error);
+        alert("Gagal memuat turun data kehadiran profil.");
+    }
+};
+
+window.closeStaffCard = () => {
+    id('staff-card-modal')?.classList.add('hidden');
+};
