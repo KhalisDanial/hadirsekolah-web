@@ -1148,103 +1148,125 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* =========================================
    MOBILE RESPONSIVENESS (SMARTPHONE VIEW)
+   DIKEMASKINI: Gaya Aplikasi Natif (Bottom Nav)
 ========================================= */
 @media (max-width: 768px) {
-    /* Paksa skrin telefon supaya tidak membesar ke tepi */
-    html, body {
-        overflow-x: hidden !important;
-        width: 100vw !important;
-    }
+    /* Paksa skrin telefon mematuhi saiz viewport */
+    html, body { overflow-x: hidden !important; width: 100vw !important; }
 
-    /* 1. Sidebar adjustments */
+    /* 1. UBAH MENU TEPI KE MENU BAWAH (BOTTOM NAVIGATION BAR) */
     .sidebar { 
-        width: 65px; 
-        overflow-x: hidden; /* Halang teks terkeluar */
+        width: 100%; 
+        height: 65px; 
+        position: fixed; 
+        bottom: 0; 
+        top: auto; 
+        left: 0;
+        flex-direction: row; 
+        border-top: 1px solid rgba(255,255,255,0.1); 
+        z-index: 1000;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
     }
-    .content { 
-        margin-left: 65px; 
-        padding: 1rem 0.5rem; 
-        width: calc(100vw - 65px); /* Pastikan content muat-muat skrin */
-    }
+    .logo { display: none !important; } /* Sembunyikan tulisan HadirSekolah di sidebar */
     
-    /* Sembunyikan teks menu, tinggalkan ikon sahaja */
-    .nav-item span, .logo h1, .sidebar-footer button { 
-        display: none !important; 
-    }
-    .nav-item {
-        padding: 1rem 0;
-        justify-content: center;
-    }
-    .nav-item i {
-        font-size: 1.3rem; /* Besarkan sikit ikon di telefon */
-    }
-
-    /* 2. Top Bar & Date Picker Stacking */
-    .top-bar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-    }
-    .global-filters .date-control {
+    nav { width: 100%; padding: 0; }
+    nav ul { display: flex; justify-content: space-around; align-items: center; height: 100%; margin: 0; padding: 0; }
+    
+    .nav-item { 
+        padding: 10px; 
+        flex: 1; 
+        text-align: center; 
+        border-right: none; 
+        border-bottom: none;
+        border-top: 3px solid transparent; /* Garis aktif di atas */
         display: flex;
         flex-direction: column;
-        width: 100%;
-        gap: 10px;
+        justify-content: center;
     }
+    .nav-item.active { 
+        border-top: 3px solid var(--primary); 
+        background: rgba(37, 99, 235, 0.15); 
+    }
+    .nav-item span { display: none !important; } /* Sembunyikan teks menu */
+    .nav-item i { font-size: 1.4rem; margin: 0; }
 
-    /* 3. Make ALL Tables Scrollable Horizontally (Paling Penting) */
-    .table-scroll, table, .excel-style-table {
+    /* Pindahkan Butang Log Keluar Ke Atas Kanan (Header) */
+    .sidebar-footer { 
         display: block !important;
-        width: 100% !important;
-        overflow-x: auto !important;
-        white-space: nowrap !important;
-        -webkit-overflow-scrolling: touch; /* Skrol lancar di iPhone */
+        position: fixed; 
+        top: 15px; 
+        right: 15px; 
+        padding: 0; 
+        z-index: 1001; 
+    }
+    #logout-btn { padding: 6px 12px; font-size: 0.8rem; background: #e74c3c; width: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+    /* 2. RUANG KANDUNGAN UTAMA */
+    .content { 
+        margin-left: 0 !important; /* Buang jarak margin kiri */
+        margin-bottom: 65px !important; /* Beri laluan kepada bottom nav */
+        padding: 1rem 12px; 
+        width: 100vw !important; 
     }
 
-    /* 4. Controls, Search Bars, and Buttons */
-    .controls {
-        flex-direction: column;
-        align-items: stretch;
+    /* 3. TOP BAR & TARIKH (Disusun Sebaris) */
+    .top-bar { 
+        padding: 5px 0 15px 0; 
+        flex-direction: row; 
+        justify-content: flex-start; 
+        align-items: center; 
+        border: none; 
     }
-    .controls .search-group {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        gap: 10px;
+    .user-info { display: none; } /* Disembunyikan, fungsi logout ambil alih */
+    .global-filters .date-control { 
+        display: flex; 
+        flex-direction: row; 
+        align-items: center; 
+        gap: 8px; 
+        width: auto; 
     }
-    .export-group {
-        display: flex;
-        width: 100%;
-        gap: 10px;
-        margin-top: 10px;
+    .date-control label { display: none; } /* Buang tulisan 'Tarikh:' */
+    .date-input { width: 140px; padding: 8px; font-size: 0.9rem; }
+    .btn-today { padding: 8px 12px; font-size: 0.9rem; }
+
+    /* 4. KAD STATISTIK (Lebih Padat & Susun 2 Lajur) */
+    .stats-grid.clickable-stats { 
+        grid-template-columns: 1fr 1fr; /* Memaksa kad disusun sebelah menyebelah */
+        gap: 10px; 
+        margin-bottom: 15px; 
     }
-    .btn-pdf, .btn-csv {
-        flex: 1;
-        justify-content: center;
+    .stats-grid.clickable-stats .card:first-child { 
+        grid-column: span 2; /* Kad pertama (Jumlah Murid) bersaiz lebar penuh */
+    } 
+    .card { padding: 12px 10px !important; }
+    .stat-value { font-size: 1.6rem !important; margin: 0 !important; }
+    .stat-label { font-size: 0.75rem !important; margin-top: 5px;}
+    .click-hint { font-size: 0.55rem !important; margin-bottom: 2px;}
+
+    /* 5. JADUAL, IMEJ & SCROLL KANAN */
+    th, td { padding: 10px 6px !important; font-size: 0.85rem; }
+    .staff-img { width: 35px !important; height: 35px !important; } /* Kecilkan sikit gambar */
+    .table-scroll, table, .excel-style-table { 
+        display: block !important; 
+        width: 100% !important; 
+        overflow-x: auto !important; 
+        white-space: nowrap !important; 
+        -webkit-overflow-scrolling: touch; /* Melancarkan scroll di iPhone */
     }
 
-    /* 5. Modals & Forms */
-    .modal-content {
-        width: 95%;
-        padding: 1.5rem;
-        max-height: 90vh; /* Elak popup terlalu tinggi */
-        overflow-y: auto;
+    /* 6. KAWALAN CARIAN & BUTANG EXPORT (Disusun Sebaris) */
+    .controls .search-group { 
+        flex-direction: row; 
+        gap: 5px; 
     }
-    .form-grid {
-        grid-template-columns: 1fr; /* Susun input atas-bawah */
-        gap: 15px;
-        padding: 5px;
-    }
-    .image-upload-section {
-        grid-column: span 1;
-        flex-direction: column;
-        gap: 15px;
-    }
+    .controls .search-group select { width: 40%; padding: 8px; font-size: 0.85rem; }
+    .controls .search-group input { width: 60%; padding: 8px; font-size: 0.85rem; }
+    .export-group { display: flex; width: 100%; gap: 10px; margin-top: 5px; }
+    .btn-pdf, .btn-csv { flex: 1; justify-content: center; padding: 8px; font-size: 0.85rem; }
 }
 
-/* Extra adjustment for very small screens (like older iPhones) */
-@media (max-width: 480px) {
-    .stats-grid, .stats-grid.clickable-stats {
-        grid-template-columns: 1fr; /* Stack stat cards vertically */
-    }
+/* Penyesuaian Ekstra untuk Skrin Tersangat Kecil (Contoh: iPhone SE) */
+@media (max-width: 380px) {
+    .date-input { width: 120px; }
+    .stat-value { font-size: 1.4rem !important; }
 }
