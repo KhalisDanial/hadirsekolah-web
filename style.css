@@ -590,7 +590,7 @@ th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size:
 
 .stats-grid.clickable-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, min-minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Fixed min-minmax typo */
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -1144,4 +1144,126 @@ input:checked + .slider:before { transform: translateX(20px); }
     transform: scale(1.15);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     border-color: var(--primary);
+}
+
+/* =========================================
+   MOBILE RESPONSIVENESS (SMARTPHONE VIEW)
+========================================= */
+@media (max-width: 768px) {
+    /* 1. Sidebar adjustments */
+    .sidebar { 
+        width: 60px; 
+    }
+    .content { 
+        margin-left: 60px; 
+        padding: 1rem; 
+    }
+
+    /* 2. Top Bar & Date Picker Stacking */
+    .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .user-info {
+        text-align: left;
+    }
+    .global-filters .date-control {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    /* 3. Make ALL Tables Scrollable Horizontally */
+    table, .excel-style-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap; /* Prevents rows from becoming extremely tall */
+    }
+
+    /* 4. Controls, Search Bars, and Buttons */
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .controls .search-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+    .export-group {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .btn-pdf, .btn-csv {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* 5. Management Section Toolbars */
+    .toolbar-top-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .view-selector {
+        width: 100%;
+        display: flex;
+    }
+    .view-tab {
+        flex: 1;
+        text-align: center;
+    }
+    .excel-filters {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+    .filter-wrapper, .search-wrapper {
+        width: 100%;
+    }
+    .excel-filters select, .excel-filters input {
+        width: 100%;
+    }
+
+    /* 6. Modals & Forms */
+    .modal-content {
+        width: 95%;
+        padding: 1.5rem;
+    }
+    .form-grid {
+        grid-template-columns: 1fr; /* Stack form inputs to 1 column */
+        gap: 15px;
+        padding: 15px;
+    }
+    .image-upload-section {
+        grid-column: span 1; /* Reset span for single column */
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    /* 7. Action Buttons Row */
+    .manage-action-buttons-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .import-wrapper {
+        width: 100%;
+        display: flex;
+    }
+    .btn-import {
+        flex: 1;
+    }
+}
+
+/* Extra adjustment for very small screens (like older iPhones) */
+@media (max-width: 480px) {
+    .stats-grid, .stats-grid.clickable-stats {
+        grid-template-columns: 1fr; /* Stack stat cards vertically */
+    }
 }
