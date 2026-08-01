@@ -1296,6 +1296,54 @@ input:checked + .slider:before { transform: translateX(20px); }
     /* 7. MODAL KAD PROFIL */
     .modal-content { max-width: 90% !important; padding: 0 !important; }
     #data-modal .modal-content { padding: 1.5rem !important; max-height: 90vh; overflow-y: auto; }
+
+    /* 8. PENGURUSAN DATA (Filter & Butang Tindakan) */
+    .toolbar-top-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .view-selector { 
+        display: flex; 
+        width: 100%; 
+    }
+    .view-tab { 
+        flex: 1; 
+        text-align: center; 
+    }
+    .excel-filters {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+    .filter-wrapper, .search-wrapper { width: 100%; }
+    .excel-filters select, .excel-filters input { width: 100%; }
+
+    /* Susun Butang Tambah, Import & Template Secara Menegak */
+    .manage-action-buttons-row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .btn-primary-strike, .btn-secondary-strike, .btn-template-sm {
+        width: 100%;
+        justify-content: center;
+        padding: 10px;
+    }
+    .import-wrapper {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 10px;
+    }
+    .btn-import { 
+        flex: 1; 
+        justify-content: center; 
+        text-align: center; 
+    }
 }
 
 @media (max-width: 380px) {
