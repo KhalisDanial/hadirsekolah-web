@@ -218,7 +218,7 @@ window.deleteSelectedRecords = async (mode) => {
 };
 
 async function refreshClassDropdown() {
-    console.log("Fetching for School ID:", currentSchoolId); // Check if this is NULL for SKDI
+    console.log("Fetching for School ID:", currentSchoolId);
     const { data: students } = await supabase
         .from('students')
         .select('*')
@@ -234,11 +234,15 @@ async function refreshClassDropdown() {
 
     if (dropdown) dropdown.innerHTML = '<option value="">Semua Kelas</option>' + options;
     if (attendanceDropdown) {
-        attendanceDropdown.innerHTML = options;
-        if (attendanceDropdown.value === "" && classes.length > 0) {
-            attendanceDropdown.value = classes[0];
-            if (typeof fetchMuridAttendance === 'function') fetchMuridAttendance();
+        // Gabungkan pilihan SEMUA dengan senarai kelas
+        attendanceDropdown.innerHTML = '<option value="SEMUA">Semua Kelas</option>' + options;
+        
+        // Tetapkan nilai lalai kepada SEMUA
+        if (!attendanceDropdown.value || attendanceDropdown.value === "") {
+            attendanceDropdown.value = "SEMUA";
         }
+        // Panggil render untuk paparan jadual dan statistik
+        if (typeof fetchMuridAttendance === 'function') fetchMuridAttendance();
     }
 }
 
@@ -447,10 +451,10 @@ function renderMuridTable() {
     const selectedClass = classDropdown.value;
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
     
-    // Filter students by class and search search term
+    // KEMAS KINI: Sokongan untuk "SEMUA" kelas & carian selamat (safe search)
     const filteredStudents = allStudents.filter(s => 
-        s.class_name_full === selectedClass && 
-        (s.name.toLowerCase().includes(searchTerm) || s.barcode.includes(searchTerm))
+        (selectedClass === "SEMUA" || selectedClass === "" || s.class_name_full === selectedClass) && 
+        (s.name.toLowerCase().includes(searchTerm) || (s.barcode || "").toLowerCase().includes(searchTerm))
     );
 
     // Lists for the Stats Modal
@@ -497,9 +501,11 @@ function renderMuridTable() {
         // Display the scan time we formatted during fetch, or a dash if absent
         const timeDisplay = record ? record.scan_time_display : '-';
 
+        // KEMAS KINI: Tambah lajur imej berserta default-avatar.png
         rowsHtml += `
             <tr>
                 <td>${visibleIndex++}</td>
+                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'"></td>
                 <td>${s.name}</td>
                 <td><code class="barcode-text">${s.barcode}</code></td>
                 <td>${timeDisplay}</td>
@@ -508,7 +514,8 @@ function renderMuridTable() {
         `;
     });
 
-    tbody.innerHTML = rowsHtml || '<tr><td colspan="5" style="text-align:center;">Tiada data untuk dipaparkan.</td></tr>';
+    // KEMAS KINI: Tukar colspan kepada 6 kerana lajur Gambar telah ditambah
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="6" style="text-align:center;">Tiada data untuk dipaparkan.</td></tr>';
     
     // Update the Stats Numbers on the Dashboard
     if (id('m-total')) id('m-total').innerText = filteredStudents.length;
