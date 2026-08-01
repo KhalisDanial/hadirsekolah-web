@@ -1133,3 +1133,15 @@ th { background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size:
 }
 input:checked + .slider { background-color: var(--success); }
 input:checked + .slider:before { transform: translateX(20px); }
+
+/* --- KLIK GAMBAR MURID --- */
+.clickable-avatar {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.clickable-avatar:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: var(--primary);
+}

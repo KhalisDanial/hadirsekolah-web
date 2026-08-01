@@ -501,11 +501,10 @@ function renderMuridTable() {
         // Display the scan time we formatted during fetch, or a dash if absent
         const timeDisplay = record ? record.scan_time_display : '-';
 
-        // KEMAS KINI: Tambah lajur imej berserta default-avatar.png
         rowsHtml += `
             <tr>
                 <td>${visibleIndex++}</td>
-                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'"></td>
+                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img clickable-avatar" onerror="this.src='default-avatar.png'" onclick="openStudentCard(${s.id})" title="Klik untuk lihat Kad Profil"></td>
                 <td>${s.name}</td>
                 <td><code class="barcode-text">${s.barcode}</code></td>
                 <td>${timeDisplay}</td>
@@ -1862,3 +1861,100 @@ window.toggleRMTStatus = async (studentId, isChecked) => {
         alert("Gagal menyimpan status RMT: " + err.message);
     }
 };
+
+// ==========================================
+// --- KAD PROFIL MINI MURID (PENGKIRAAN BIJAK) ---
+// ==========================================
+
+window.openStudentCard = async (studentId) => {
+    const student = allStudents.find(s => s.id === studentId);
+    if (!student) return;
+
+    // 1. Paparkan Modal & Set Maklumat Asas
+    id('student-card-modal').classList.remove('hidden');
+    id('card-img').src = student.photo_url || 'default-avatar.png';
+    id('card-name').innerText = student.name;
+    id('card-class').innerText = student.class_name_full || 'Tiada Kelas';
+    
+    // Reset angka sementara menunggu data dari server
+    id('card-attend-days').innerText = '-';
+    id('card-total-days').innerText = '-';
+    id('card-percentage').innerText = 'Kira...';
+    id('card-progress-bar').style.width = '0%';
+
+    const currentYear = new Date().getFullYear();
+    id('card-year').innerText = currentYear;
+    const startDate = `${currentYear}-01-01`;
+
+    try {
+        // 2. Dapatkan jumlah hari murid ini hadir (Count sahaja, lebih laju)
+        const { count: studentDays, error: err1 } = await supabase
+            .from('students_attendance')
+            .select('*', { count: 'exact', head: true })
+            .eq('student_id', studentId)
+            .gte('date', startDate);
+
+        if (err1) throw err1;
+
+        // 3. Dapatkan jumlah Hari Persekolahan Sebenar (Kiraan Bijak)
+        // Kita ambil semua rekod kehadiran sekolah tahun ini, dan hanya kira tarikh yang unik (Distinct Dates)
+        const { data: allDates, error: err2 } = await supabase
+            .from('students_attendance')
+            .select('date')
+            .eq('school_id', currentSchoolId)
+            .gte('date', startDate);
+
+        if (err2) throw err2;
+
+        let totalSchoolDays = 0;
+        if (allDates) {
+            // Set() secara automatik membuang tarikh yang berulang. 
+            // Jadi 500 rekod pada 1 Ogos akan dikira sebagai 1 hari sekolah.
+            totalSchoolDays = new Set(allDates.map(d => d.date)).size;
+        }
+
+        // 4. Kira Peratusan
+        const attendCount = studentDays || 0;
+        let percentage = 0;
+        if (totalSchoolDays > 0) {
+            percentage = Math.round((attendCount / totalSchoolDays) * 100);
+        }
+
+        // 5. Kemas kini antaramuka dengan data sebenar
+        id('card-attend-days').innerText = attendCount;
+        id('card-total-days').innerText = totalSchoolDays;
+        id('card-percentage').innerText = `${percentage}%`;
+        
+        // Animasi peratusan warna
+        const progressBar = id('card-progress-bar');
+        progressBar.style.width = `${percentage}%`;
+        
+        // Tukar warna palang mengikut prestasi (Merah jika < 80%, Hijau jika > 80%)
+        if (percentage < 80) {
+            progressBar.style.background = '#ef4444'; // Merah
+            id('card-percentage').style.color = '#ef4444';
+        } else {
+            progressBar.style.background = '#22c55e'; // Hijau
+            id('card-percentage').style.color = '#334155';
+        }
+
+        // 6. Tarikh Setakat Hari Ini (Format Bahasa Melayu)
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        const todayStr = new Date().toLocaleDateString('ms-MY', options);
+        id('card-date-text').innerText = `Setakat ${todayStr}`;
+
+    } catch (error) {
+        console.error("Ralat memuat turun statistik murid:", error);
+        alert("Gagal memuat turun data kehadiran profil.");
+    }
+};
+
+window.closeStudentCard = () => {
+    id('student-card-modal')?.classList.add('hidden');
+};
+
+// Pastikan modal tertutup apabila pengguna klik pada latar belakang gelap
+window.addEventListener('click', (event) => {
+    const cardModal = id('student-card-modal');
+    if (event.target === cardModal) window.closeStudentCard();
+});
