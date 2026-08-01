@@ -1146,29 +1146,62 @@ input:checked + .slider:before { transform: translateX(20px); }
     border-color: var(--primary);
 }
 
+/* --- PROFIL PENGGUNA & LOG KELUAR --- */
+.user-action-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.user-info {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+#admin-name { font-weight: 700; color: #1e293b; }
+#admin-role { color: #64748b; font-weight: 500; font-size: 0.8rem; }
+
+.btn-logout {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+.btn-logout:hover {
+    background-color: #dc2626;
+    transform: translateY(-1px);
+}
+
 /* =========================================
    MOBILE RESPONSIVENESS (SMARTPHONE VIEW)
-   DIKEMASKINI: Navigasi Teks & Log Keluar
+   DIKEMASKINI: Profil & Tarikh Di Atas
 ========================================= */
 @media (max-width: 768px) {
     /* Paksa skrin telefon mematuhi saiz viewport */
     html, body { overflow-x: hidden !important; width: 100vw !important; }
 
-    /* 1. MENU BAWAH (BOTTOM NAVIGATION BAR) DENGAN TEKS */
+    /* 1. MENU BAWAH (BOTTOM NAVIGATION BAR) */
     .sidebar { 
         width: 100%; 
-        height: 65px; /* Sesuai untuk muatkan ikon + teks */
+        height: 65px; 
         position: fixed; 
         bottom: 0; 
         top: auto; 
         left: 0;
         flex-direction: row; 
         border-top: 1px solid #e2e8f0; 
-        background: #ffffff; /* Pastikan menu menonjol */
+        background: #ffffff;
         z-index: 1000;
         box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
     }
-    .logo { display: none !important; } 
+    .logo, .sidebar-footer { display: none !important; } /* Buang footer lama */
     
     nav { width: 100%; padding: 0; height: 100%; }
     nav ul { display: flex; justify-content: space-around; align-items: center; height: 100%; margin: 0; padding: 0; }
@@ -1177,67 +1210,52 @@ input:checked + .slider:before { transform: translateX(20px); }
         padding: 5px; 
         flex: 1; 
         text-align: center; 
-        border-right: none; 
-        border-bottom: none;
         border-top: 3px solid transparent; 
         display: flex;
-        flex-direction: column; /* Susun ikon atas, teks bawah */
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         gap: 3px; 
-        color: #64748b; /* Kelabu lembut */
+        color: #64748b; 
     }
     .nav-item.active { 
         border-top: 3px solid var(--primary); 
         background: rgba(37, 99, 235, 0.05); 
-        color: var(--primary); /* Biru aktif */
+        color: var(--primary); 
     }
-    
-    /* MUNCULKAN SEMULA TEKS MENU */
-    .nav-item span { 
-        display: block !important; 
-        font-size: 0.65rem; /* Saiz font ala aplikasi */
-        font-weight: 600;
-    } 
+    .nav-item span { display: block !important; font-size: 0.65rem; font-weight: 600; } 
     .nav-item i { font-size: 1.2rem; margin: 0; }
 
-    /* 2. BUTANG LOG KELUAR DI PENJURU ATAS (DIBETULKAN) */
-    .sidebar-footer { 
-        display: block !important;
-        position: absolute; /* Lebihkan kebebasan posisi */
-        top: 25px; 
-        right: 15px; 
-        padding: 0; 
-        z-index: 1001; 
-    }
-    #logout-btn { 
-        display: block !important; /* Paksa muncul */
-        padding: 6px 12px; 
-        font-size: 0.75rem; 
-        background: #e74c3c; 
-        color: white;
-        border-radius: 6px;
-        width: auto; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
-    }
-
-    /* 3. RUANG KANDUNGAN UTAMA */
+    /* 2. RUANG KANDUNGAN UTAMA */
     .content { 
         margin-left: 0 !important; 
-        margin-bottom: 65px !important; /* Beri laluan bottom nav */
+        margin-bottom: 65px !important; 
         padding: 1rem 12px; 
         width: 100vw !important; 
     }
 
-    /* 4. TOP BAR & TARIKH (Disusun Sebaris) */
+    /* 3. TOP BAR (PROFIL DI ATAS, TARIKH DI BAWAH) */
     .top-bar { 
         padding: 5px 0 15px 0; 
-        flex-direction: row; 
-        justify-content: flex-start; 
-        align-items: center; 
+        flex-direction: column-reverse; /* Profil dan butang akan naik ke atas */
+        align-items: stretch; 
+        gap: 15px; 
         border: none; 
     }
-    .user-info { display: none; } 
+    
+    .user-action-group {
+        display: flex;
+        justify-content: space-between; /* Nama di kiri, Butang di kanan */
+        align-items: center;
+        width: 100%;
+        background: #f8fafc; /* Latar belakang lembut membezakan kad */
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+    .user-info { text-align: left; display: flex !important; }
+    #admin-name { font-size: 0.95rem; }
+    
     .global-filters .date-control { 
         display: flex; 
         flex-direction: row; 
@@ -1249,21 +1267,15 @@ input:checked + .slider:before { transform: translateX(20px); }
     .date-input { width: 140px; padding: 8px; font-size: 0.9rem; }
     .btn-today { padding: 8px 12px; font-size: 0.9rem; }
 
-    /* 5. KAD STATISTIK (2 Lajur) */
-    .stats-grid.clickable-stats { 
-        grid-template-columns: 1fr 1fr; 
-        gap: 10px; 
-        margin-bottom: 15px; 
-    }
-    .stats-grid.clickable-stats .card:first-child { 
-        grid-column: span 2; 
-    } 
+    /* 4. KAD STATISTIK (2 Lajur) */
+    .stats-grid.clickable-stats { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .stats-grid.clickable-stats .card:first-child { grid-column: span 2; } 
     .card { padding: 12px 10px !important; }
     .stat-value { font-size: 1.6rem !important; margin: 0 !important; }
     .stat-label { font-size: 0.75rem !important; margin-top: 5px;}
     .click-hint { font-size: 0.55rem !important; margin-bottom: 2px;}
 
-    /* 6. JADUAL, IMEJ & SCROLL KANAN */
+    /* 5. JADUAL, IMEJ & SCROLL KANAN */
     th, td { padding: 10px 6px !important; font-size: 0.85rem; }
     .staff-img { width: 35px !important; height: 35px !important; } 
     .table-scroll, table, .excel-style-table { 
@@ -1274,20 +1286,21 @@ input:checked + .slider:before { transform: translateX(20px); }
         -webkit-overflow-scrolling: touch; 
     }
 
-    /* 7. KAWALAN CARIAN & BUTANG EXPORT */
+    /* 6. KAWALAN CARIAN & BUTANG EXPORT */
     .controls .search-group { flex-direction: row; gap: 5px; }
     .controls .search-group select { width: 40%; padding: 8px; font-size: 0.85rem; }
     .controls .search-group input { width: 60%; padding: 8px; font-size: 0.85rem; }
     .export-group { display: flex; width: 100%; gap: 10px; margin-top: 5px; }
     .btn-pdf, .btn-csv { flex: 1; justify-content: center; padding: 8px; font-size: 0.85rem; }
     
-    /* 8. MODAL KAD PROFIL */
+    /* 7. MODAL KAD PROFIL */
     .modal-content { max-width: 90% !important; padding: 0 !important; }
-    #data-modal .modal-content { padding: 1.5rem !important; }
+    #data-modal .modal-content { padding: 1.5rem !important; max-height: 90vh; overflow-y: auto; }
 }
 
 @media (max-width: 380px) {
     .date-input { width: 120px; }
     .stat-value { font-size: 1.4rem !important; }
-    .nav-item span { font-size: 0.55rem; } /* Kecilkan teks menu sikit lagi untuk iPhone lama */
+    .nav-item span { font-size: 0.55rem; } 
+    #admin-name { font-size: 0.85rem; }
 }

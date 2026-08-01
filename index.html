@@ -36,13 +36,11 @@
                     <li class="nav-item" data-section="rmt-section"><i class="fas fa-utensils"></i> <span>RMT</span></li>
                 </ul>
             </nav>
-            <div class="sidebar-footer">
-                <button id="logout-btn">Log Keluar</button>
-            </div>
         </aside>
 
         <main class="content">
             <header class="top-bar">
+                <!-- Bahagian Tarikh (Kiri) -->
                 <div class="global-filters">
                     <div class="date-control">
                         <label for="date-picker"><i class="fas fa-calendar-day"></i> Tarikh:</label>
@@ -53,9 +51,15 @@
                     </div>
                 </div>
 
-                <div class="user-info">
-                    <span id="admin-name">Memuatkan...</span>
-                    <small id="admin-role"></small>
+                <!-- Bahagian Profil & Log Keluar (Kanan) -->
+                <div class="user-action-group">
+                    <div class="user-info">
+                        <span id="admin-name">Memuatkan...</span>
+                        <small id="admin-role"></small>
+                    </div>
+                    <button id="logout-btn" class="btn-logout">
+                        <i class="fas fa-sign-out-alt"></i> Log Keluar
+                    </button>
                 </div>
             </header>
 
