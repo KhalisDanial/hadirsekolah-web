@@ -1148,68 +1148,88 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* =========================================
    MOBILE RESPONSIVENESS (SMARTPHONE VIEW)
-   DIKEMASKINI: Gaya Aplikasi Natif (Bottom Nav)
+   DIKEMASKINI: Navigasi Teks & Log Keluar
 ========================================= */
 @media (max-width: 768px) {
     /* Paksa skrin telefon mematuhi saiz viewport */
     html, body { overflow-x: hidden !important; width: 100vw !important; }
 
-    /* 1. UBAH MENU TEPI KE MENU BAWAH (BOTTOM NAVIGATION BAR) */
+    /* 1. MENU BAWAH (BOTTOM NAVIGATION BAR) DENGAN TEKS */
     .sidebar { 
         width: 100%; 
-        height: 65px; 
+        height: 65px; /* Sesuai untuk muatkan ikon + teks */
         position: fixed; 
         bottom: 0; 
         top: auto; 
         left: 0;
         flex-direction: row; 
-        border-top: 1px solid rgba(255,255,255,0.1); 
+        border-top: 1px solid #e2e8f0; 
+        background: #ffffff; /* Pastikan menu menonjol */
         z-index: 1000;
-        box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
     }
-    .logo { display: none !important; } /* Sembunyikan tulisan HadirSekolah di sidebar */
+    .logo { display: none !important; } 
     
-    nav { width: 100%; padding: 0; }
+    nav { width: 100%; padding: 0; height: 100%; }
     nav ul { display: flex; justify-content: space-around; align-items: center; height: 100%; margin: 0; padding: 0; }
     
     .nav-item { 
-        padding: 10px; 
+        padding: 5px; 
         flex: 1; 
         text-align: center; 
         border-right: none; 
         border-bottom: none;
-        border-top: 3px solid transparent; /* Garis aktif di atas */
+        border-top: 3px solid transparent; 
         display: flex;
-        flex-direction: column;
+        flex-direction: column; /* Susun ikon atas, teks bawah */
         justify-content: center;
+        align-items: center;
+        gap: 3px; 
+        color: #64748b; /* Kelabu lembut */
     }
     .nav-item.active { 
         border-top: 3px solid var(--primary); 
-        background: rgba(37, 99, 235, 0.15); 
+        background: rgba(37, 99, 235, 0.05); 
+        color: var(--primary); /* Biru aktif */
     }
-    .nav-item span { display: none !important; } /* Sembunyikan teks menu */
-    .nav-item i { font-size: 1.4rem; margin: 0; }
+    
+    /* MUNCULKAN SEMULA TEKS MENU */
+    .nav-item span { 
+        display: block !important; 
+        font-size: 0.65rem; /* Saiz font ala aplikasi */
+        font-weight: 600;
+    } 
+    .nav-item i { font-size: 1.2rem; margin: 0; }
 
-    /* Pindahkan Butang Log Keluar Ke Atas Kanan (Header) */
+    /* 2. BUTANG LOG KELUAR DI PENJURU ATAS (DIBETULKAN) */
     .sidebar-footer { 
         display: block !important;
-        position: fixed; 
-        top: 15px; 
+        position: absolute; /* Lebihkan kebebasan posisi */
+        top: 25px; 
         right: 15px; 
         padding: 0; 
         z-index: 1001; 
     }
-    #logout-btn { padding: 6px 12px; font-size: 0.8rem; background: #e74c3c; width: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    #logout-btn { 
+        display: block !important; /* Paksa muncul */
+        padding: 6px 12px; 
+        font-size: 0.75rem; 
+        background: #e74c3c; 
+        color: white;
+        border-radius: 6px;
+        width: auto; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+    }
 
-    /* 2. RUANG KANDUNGAN UTAMA */
+    /* 3. RUANG KANDUNGAN UTAMA */
     .content { 
-        margin-left: 0 !important; /* Buang jarak margin kiri */
-        margin-bottom: 65px !important; /* Beri laluan kepada bottom nav */
+        margin-left: 0 !important; 
+        margin-bottom: 65px !important; /* Beri laluan bottom nav */
         padding: 1rem 12px; 
         width: 100vw !important; 
     }
 
-    /* 3. TOP BAR & TARIKH (Disusun Sebaris) */
+    /* 4. TOP BAR & TARIKH (Disusun Sebaris) */
     .top-bar { 
         padding: 5px 0 15px 0; 
         flex-direction: row; 
@@ -1217,7 +1237,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         align-items: center; 
         border: none; 
     }
-    .user-info { display: none; } /* Disembunyikan, fungsi logout ambil alih */
+    .user-info { display: none; } 
     .global-filters .date-control { 
         display: flex; 
         flex-direction: row; 
@@ -1225,48 +1245,49 @@ input:checked + .slider:before { transform: translateX(20px); }
         gap: 8px; 
         width: auto; 
     }
-    .date-control label { display: none; } /* Buang tulisan 'Tarikh:' */
+    .date-control label { display: none; }
     .date-input { width: 140px; padding: 8px; font-size: 0.9rem; }
     .btn-today { padding: 8px 12px; font-size: 0.9rem; }
 
-    /* 4. KAD STATISTIK (Lebih Padat & Susun 2 Lajur) */
+    /* 5. KAD STATISTIK (2 Lajur) */
     .stats-grid.clickable-stats { 
-        grid-template-columns: 1fr 1fr; /* Memaksa kad disusun sebelah menyebelah */
+        grid-template-columns: 1fr 1fr; 
         gap: 10px; 
         margin-bottom: 15px; 
     }
     .stats-grid.clickable-stats .card:first-child { 
-        grid-column: span 2; /* Kad pertama (Jumlah Murid) bersaiz lebar penuh */
+        grid-column: span 2; 
     } 
     .card { padding: 12px 10px !important; }
     .stat-value { font-size: 1.6rem !important; margin: 0 !important; }
     .stat-label { font-size: 0.75rem !important; margin-top: 5px;}
     .click-hint { font-size: 0.55rem !important; margin-bottom: 2px;}
 
-    /* 5. JADUAL, IMEJ & SCROLL KANAN */
+    /* 6. JADUAL, IMEJ & SCROLL KANAN */
     th, td { padding: 10px 6px !important; font-size: 0.85rem; }
-    .staff-img { width: 35px !important; height: 35px !important; } /* Kecilkan sikit gambar */
+    .staff-img { width: 35px !important; height: 35px !important; } 
     .table-scroll, table, .excel-style-table { 
         display: block !important; 
         width: 100% !important; 
         overflow-x: auto !important; 
         white-space: nowrap !important; 
-        -webkit-overflow-scrolling: touch; /* Melancarkan scroll di iPhone */
+        -webkit-overflow-scrolling: touch; 
     }
 
-    /* 6. KAWALAN CARIAN & BUTANG EXPORT (Disusun Sebaris) */
-    .controls .search-group { 
-        flex-direction: row; 
-        gap: 5px; 
-    }
+    /* 7. KAWALAN CARIAN & BUTANG EXPORT */
+    .controls .search-group { flex-direction: row; gap: 5px; }
     .controls .search-group select { width: 40%; padding: 8px; font-size: 0.85rem; }
     .controls .search-group input { width: 60%; padding: 8px; font-size: 0.85rem; }
     .export-group { display: flex; width: 100%; gap: 10px; margin-top: 5px; }
     .btn-pdf, .btn-csv { flex: 1; justify-content: center; padding: 8px; font-size: 0.85rem; }
+    
+    /* 8. MODAL KAD PROFIL */
+    .modal-content { max-width: 90% !important; padding: 0 !important; }
+    #data-modal .modal-content { padding: 1.5rem !important; }
 }
 
-/* Penyesuaian Ekstra untuk Skrin Tersangat Kecil (Contoh: iPhone SE) */
 @media (max-width: 380px) {
     .date-input { width: 120px; }
     .stat-value { font-size: 1.4rem !important; }
+    .nav-item span { font-size: 0.55rem; } /* Kecilkan teks menu sikit lagi untuk iPhone lama */
 }
