@@ -1150,13 +1150,33 @@ input:checked + .slider:before { transform: translateX(20px); }
    MOBILE RESPONSIVENESS (SMARTPHONE VIEW)
 ========================================= */
 @media (max-width: 768px) {
+    /* Paksa skrin telefon supaya tidak membesar ke tepi */
+    html, body {
+        overflow-x: hidden !important;
+        width: 100vw !important;
+    }
+
     /* 1. Sidebar adjustments */
     .sidebar { 
-        width: 60px; 
+        width: 65px; 
+        overflow-x: hidden; /* Halang teks terkeluar */
     }
     .content { 
-        margin-left: 60px; 
-        padding: 1rem; 
+        margin-left: 65px; 
+        padding: 1rem 0.5rem; 
+        width: calc(100vw - 65px); /* Pastikan content muat-muat skrin */
+    }
+    
+    /* Sembunyikan teks menu, tinggalkan ikon sahaja */
+    .nav-item span, .logo h1, .sidebar-footer button { 
+        display: none !important; 
+    }
+    .nav-item {
+        padding: 1rem 0;
+        justify-content: center;
+    }
+    .nav-item i {
+        font-size: 1.3rem; /* Besarkan sikit ikon di telefon */
     }
 
     /* 2. Top Bar & Date Picker Stacking */
@@ -1165,21 +1185,20 @@ input:checked + .slider:before { transform: translateX(20px); }
         align-items: flex-start;
         gap: 15px;
     }
-    .user-info {
-        text-align: left;
-    }
     .global-filters .date-control {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
+        width: 100%;
         gap: 10px;
     }
 
-    /* 3. Make ALL Tables Scrollable Horizontally */
-    table, .excel-style-table {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        white-space: nowrap; /* Prevents rows from becoming extremely tall */
+    /* 3. Make ALL Tables Scrollable Horizontally (Paling Penting) */
+    .table-scroll, table, .excel-style-table {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch; /* Skrol lancar di iPhone */
     }
 
     /* 4. Controls, Search Bars, and Buttons */
@@ -1195,7 +1214,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     }
     .export-group {
         display: flex;
-        justify-content: space-between;
         width: 100%;
         gap: 10px;
         margin-top: 10px;
@@ -1205,59 +1223,22 @@ input:checked + .slider:before { transform: translateX(20px); }
         justify-content: center;
     }
 
-    /* 5. Management Section Toolbars */
-    .toolbar-top-row {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .view-selector {
-        width: 100%;
-        display: flex;
-    }
-    .view-tab {
-        flex: 1;
-        text-align: center;
-    }
-    .excel-filters {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        gap: 10px;
-    }
-    .filter-wrapper, .search-wrapper {
-        width: 100%;
-    }
-    .excel-filters select, .excel-filters input {
-        width: 100%;
-    }
-
-    /* 6. Modals & Forms */
+    /* 5. Modals & Forms */
     .modal-content {
         width: 95%;
         padding: 1.5rem;
+        max-height: 90vh; /* Elak popup terlalu tinggi */
+        overflow-y: auto;
     }
     .form-grid {
-        grid-template-columns: 1fr; /* Stack form inputs to 1 column */
+        grid-template-columns: 1fr; /* Susun input atas-bawah */
         gap: 15px;
-        padding: 15px;
+        padding: 5px;
     }
     .image-upload-section {
-        grid-column: span 1; /* Reset span for single column */
+        grid-column: span 1;
         flex-direction: column;
         gap: 15px;
-    }
-    
-    /* 7. Action Buttons Row */
-    .manage-action-buttons-row {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .import-wrapper {
-        width: 100%;
-        display: flex;
-    }
-    .btn-import {
-        flex: 1;
     }
 }
 
