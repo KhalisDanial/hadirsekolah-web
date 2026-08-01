@@ -1297,42 +1297,73 @@ input:checked + .slider:before { transform: translateX(20px); }
     .modal-content { max-width: 90% !important; padding: 0 !important; }
     #data-modal .modal-content { padding: 1.5rem !important; max-height: 90vh; overflow-y: auto; }
 
-    /* 8. PENGURUSAN DATA (Filter & Butang Tindakan) */
+    /* =========================================
+       8. PENGURUSAN DATA (Filter & Butang Tindakan)
+       Susunan Semula: Lebih Kemas & Teratur
+    ========================================= */
+    .excel-toolbar {
+        flex-direction: column !important; /* Paksa kotak utama susun atas-bawah */
+        gap: 15px;
+        padding: 15px;
+    }
+    
     .toolbar-top-row {
         flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
+        width: 100%;
+        gap: 15px;
     }
+    
+    /* A. Bahagian Tab (Murid / Staf) */
     .view-selector { 
         display: flex; 
         width: 100%; 
+        background: #e2e8f0; /* Latar belakang kelabu lembut */
+        border-radius: 8px;
+        padding: 4px;
     }
     .view-tab { 
         flex: 1; 
         text-align: center; 
+        padding: 8px 0;
+        font-size: 0.9rem;
     }
+    
+    /* B. Bahagian Penapis (Kelas & Carian) */
     .excel-filters {
         display: flex;
         flex-direction: column;
         width: 100%;
         gap: 10px;
     }
-    .filter-wrapper, .search-wrapper { width: 100%; }
-    .excel-filters select, .excel-filters input { width: 100%; }
+    .filter-wrapper, .search-wrapper { 
+        width: 100%; 
+    }
+    .excel-filters select, .excel-filters input { 
+        width: 100%; 
+        padding: 10px 12px 10px 35px; /* Kekalkan ruang untuk ikon */
+        font-size: 0.95rem;
+    }
 
-    /* Susun Butang Tambah, Import & Template Secara Menegak */
+    /* C. Bahagian Butang Tindakan (Dipisahkan dengan garisan) */
     .manage-action-buttons-row {
         display: flex;
         flex-direction: column;
-        align-items: stretch;
+        width: 100%;
         gap: 10px;
-        margin-top: 10px;
+        border-top: 1px dashed #cbd5e0; /* Garisan pemisah yang kemas */
+        padding-top: 15px;
+        margin-top: 5px;
     }
-    .btn-primary-strike, .btn-secondary-strike, .btn-template-sm {
+    
+    /* Butang Utama (Biru / Ungu) Besar di atas */
+    .btn-primary-strike, .btn-secondary-strike {
         width: 100%;
         justify-content: center;
-        padding: 10px;
+        padding: 12px;
+        font-size: 1rem;
     }
+    
+    /* Butang Import & Template disusun seragam di bawah */
     .import-wrapper {
         display: flex;
         width: 100%;
@@ -1343,6 +1374,13 @@ input:checked + .slider:before { transform: translateX(20px); }
         flex: 1; 
         justify-content: center; 
         text-align: center; 
+        padding: 10px;
+    }
+    .btn-template-sm {
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+        font-size: 0.85rem;
     }
 }
 
