@@ -1991,16 +1991,7 @@ window.openStaffCard = async (staffId) => {
     const startDate = `${currentYear}-01-01`;
 
     try {
-        // 2. Dapatkan jumlah hari staf ini hadir 
-        const { count: staffDays, error: err1 } = await supabase
-            .from('teacher_attendance')
-            .select('*', { count: 'exact', head: true })
-            .eq('teacher_id', staffId)
-            .gte('date', startDate);
-
-        if (err1) throw err1;
-
-        // 3. Dapatkan jumlah Hari Bekerja Sebenar (Kiraan Bijak)
+        // --- 1. DAPATKAN SEMUA TARIKH IMBASAN KESELURUHAN SEKOLAH ---
         const { data: allDates, error: err2 } = await supabase
             .from('teacher_attendance')
             .select('date')
@@ -2009,37 +2000,56 @@ window.openStaffCard = async (staffId) => {
 
         if (err2) throw err2;
 
+        let officialWorkDates = new Set(); // Simpan tarikh rasmi sahaja
         let totalWorkDays = 0;
         
         if (allDates) {
-            // A. Kumpul jumlah imbasan staf untuk setiap tarikh
             const dateCounts = {};
             allDates.forEach(d => {
                 dateCounts[d.date] = (dateCounts[d.date] || 0) + 1;
             });
 
-            // B. AMBANG MINIMUM (Threshold)
-            // Kira sebagai "Hari Bekerja" HANYA JIKA lebih 5 staf mengimbas pada hari tersebut
-            // Ini untuk menapis staf yang datang sekolah secara sukarela pada hari Sabtu/Ahad
             const MINIMUM_STAFF_SCANS = 5; 
 
-            // C. Kira tarikh yang melepasi ambang sahaja
+            // Masukkan tarikh yang melepasi ambang ke dalam senarai rasmi
             for (const date in dateCounts) {
                 if (dateCounts[date] >= MINIMUM_STAFF_SCANS) {
-                    totalWorkDays++;
+                    officialWorkDates.add(date); 
                 }
             }
+            totalWorkDays = officialWorkDates.size;
         }
 
-        // 4. Kira Peratusan Kehadiran
-        const attendCount = staffDays || 0;
+        // --- 2. DAPATKAN TARIKH IMBASAN STAF INI SAHAJA ---
+        const { data: staffRecords, error: err1 } = await supabase
+            .from('teacher_attendance')
+            .select('date')
+            .eq('teacher_id', staffId)
+            .gte('date', startDate);
+
+        if (err1) throw err1;
+
+        let attendCount = 0;
+
+        if (staffRecords) {
+            // Gunakan Set() untuk buang imbasan berulang pada hari yang sama (anti-spam)
+            const uniqueStaffDates = new Set(staffRecords.map(d => d.date));
+            
+            // HANYA kira kehadiran jika tarikh itu wujud dalam senarai Hari Bekerja Rasmi
+            uniqueStaffDates.forEach(date => {
+                if (officialWorkDates.has(date)) {
+                    attendCount++;
+                }
+            });
+        }
+
+        // --- 3. KIRA PERATUSAN ---
         let percentage = 0;
         if (totalWorkDays > 0) {
             percentage = Math.round((attendCount / totalWorkDays) * 100);
-            if (percentage > 100) percentage = 100; // Langkah berjaga-jaga
         }
 
-        // 5. Kemas kini antaramuka dengan data sebenar
+        // --- 4. KEMAS KINI ANTARAMUKA ---
         id('staff-card-attend-days').innerText = attendCount;
         id('staff-card-total-days').innerText = totalWorkDays;
         id('staff-card-percentage').innerText = `${percentage}%`;
@@ -2048,16 +2058,14 @@ window.openStaffCard = async (staffId) => {
         const progressBar = id('staff-card-progress-bar');
         progressBar.style.width = `${percentage}%`;
         
-        // Tukar warna palang mengikut prestasi (Merah jika < 85%, Hijau jika ok)
         if (percentage < 85) {
-            progressBar.style.background = '#ef4444'; // Merah
+            progressBar.style.background = '#ef4444'; 
             id('staff-card-percentage').style.color = '#ef4444';
         } else {
-            progressBar.style.background = '#22c55e'; // Hijau
+            progressBar.style.background = '#22c55e'; 
             id('staff-card-percentage').style.color = '#334155';
         }
 
-        // 6. Tarikh Setakat Hari Ini
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         const todayStr = new Date().toLocaleDateString('ms-MY', options);
         id('staff-card-date-text').innerText = `Setakat ${todayStr}`;
