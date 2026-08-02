@@ -122,32 +122,37 @@ async function runAIPredictiveEngine() {
 
         // --- ALGORITMA SKOR RISIKO AI (0 - 100%) ---
         let riskScore = 0;
-        
-        // Komponen 1: Kadar Ponteng (Sehingga 60 Mata)
-        const absentRate = totalSchoolDays > 0 ? (absentCount / totalSchoolDays) : 0;
-        riskScore += Math.min(60, Math.round(absentRate * 100 * 1.5));
-
-        // Komponen 2: Corak Hari Khusus (15 Mata)
-        if (dominantDayPattern) riskScore += 15;
-
-        // Komponen 3: Kekerapan Lewat (15 Mata)
-        if (lateCount >= 4) riskScore += 15;
-        else if (lateCount >= 2) riskScore += 8;
-
-        // Cap Skor Maksimum 100%
-        riskScore = Math.min(100, riskScore);
-
-        // Kategori Risiko AI
         let riskCategory = 'LOW';
-        if (riskScore >= 50 || absentCount >= 5) riskCategory = 'HIGH';
-        else if (riskScore >= 25 || absentCount >= 3 || lateCount >= 3) riskCategory = 'MEDIUM';
-
-        // Cadangan Intervensi AI
         let aiRecommendation = 'Kehadiran Memuaskan';
-        if (riskCategory === 'HIGH') {
-            aiRecommendation = 'Syor: Sesi Kaunseling & Surat Amaran Pertama';
-        } else if (riskCategory === 'MEDIUM') {
-            aiRecommendation = 'Syor: Panggilan Mesra Ibu Bapa / Peringatan Kelas';
+
+        if (attendCount === 0 && totalSchoolDays > 0) {
+            // TANGKAPAN KHAS: Murid langsung tiada rekod (Ghost Student)
+            riskScore = 100;
+            riskCategory = 'GHOST';
+            aiRecommendation = 'KRITIKAL: Siasat Status Pindah / Kod Bar Rosak';
+        } else {
+            // Komponen 1: Kadar Ponteng (Sehingga 60 Mata)
+            const absentRate = totalSchoolDays > 0 ? (absentCount / totalSchoolDays) : 0;
+            riskScore += Math.min(60, Math.round(absentRate * 100 * 1.5));
+
+            // Komponen 2: Corak Hari Khusus (15 Mata)
+            if (dominantDayPattern) riskScore += 15;
+
+            // Komponen 3: Kekerapan Lewat (15 Mata)
+            if (lateCount >= 4) riskScore += 15;
+            else if (lateCount >= 2) riskScore += 8;
+
+            // Cap Skor Maksimum 100%
+            riskScore = Math.min(100, riskScore);
+
+            // Kategori Risiko AI Biasa
+            if (riskScore >= 50 || absentCount >= 5) {
+                riskCategory = 'HIGH';
+                aiRecommendation = 'Syor: Sesi Kaunseling & Surat Amaran Pertama';
+            } else if (riskScore >= 25 || absentCount >= 3 || lateCount >= 3) {
+                riskCategory = 'MEDIUM';
+                aiRecommendation = 'Syor: Panggilan Mesra Ibu Bapa / Peringatan Kelas';
+            }
         }
 
         return {
@@ -170,11 +175,14 @@ async function runAIPredictiveEngine() {
 }
 
 function renderAIDashboardUI() {
+    const ghostRisk = analyzedRiskData.filter(d => d.riskCategory === 'GHOST');
     const highRisk = analyzedRiskData.filter(d => d.riskCategory === 'HIGH');
     const medRisk = analyzedRiskData.filter(d => d.riskCategory === 'MEDIUM');
     const patternRisk = analyzedRiskData.filter(d => d.dominantDayPattern !== null);
     const lateRisk = analyzedRiskData.filter(d => d.lateCount >= 3);
 
+    // Kemas kini nombor pada kad
+    if (id('ai-ghost-count')) id('ai-ghost-count').innerText = ghostRisk.length;
     if (id('ai-high-risk-count')) id('ai-high-risk-count').innerText = highRisk.length;
     if (id('ai-med-risk-count')) id('ai-med-risk-count').innerText = medRisk.length;
     if (id('ai-pattern-count')) id('ai-pattern-count').innerText = patternRisk.length;
@@ -192,12 +200,18 @@ function renderAIDashboardUI() {
     analyzedRiskData.forEach((item, index) => {
         let badgeColor = '#22c55e';
         let badgeText = 'Rendah';
-        if (item.riskCategory === 'HIGH') { badgeColor = '#ef4444'; badgeText = 'TINGGI'; }
+        
+        if (item.riskCategory === 'GHOST') { badgeColor = '#000000'; badgeText = 'TIADA REKOD'; }
+        else if (item.riskCategory === 'HIGH') { badgeColor = '#ef4444'; badgeText = 'TINGGI'; }
         else if (item.riskCategory === 'MEDIUM') { badgeColor = '#f59e0b'; badgeText = 'SEDERHANA'; }
 
-        const patternTag = item.dominantDayPattern 
-            ? `<span style="background:#f3e8ff; color:#7e22ce; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;"><i class="fas fa-exclamation-triangle"></i> ${item.dominantDayPattern}</span>`
-            : (item.lateCount >= 3 ? `<span style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;">Kerap Lewat (${item.lateCount}x)</span>` : '<span style="color:#94a3b8;">Normal</span>');
+        const patternTag = item.riskCategory === 'GHOST' 
+            ? `<span style="background:#f1f5f9; color:#0f172a; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;"><i class="fas fa-question-circle"></i> 0 Hari Hadir</span>`
+            : (item.dominantDayPattern 
+                ? `<span style="background:#f3e8ff; color:#7e22ce; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;"><i class="fas fa-exclamation-triangle"></i> ${item.dominantDayPattern}</span>`
+                : (item.lateCount >= 3 ? `<span style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;">Kerap Lewat (${item.lateCount}x)</span>` : '<span style="color:#94a3b8;">Normal</span>'));
+
+        const recommendationStyle = item.riskCategory === 'GHOST' ? 'color:#ef4444; font-weight: 800;' : 'color:#334155; font-weight: 600;';
 
         rowsHtml += `
             <tr>
@@ -211,7 +225,7 @@ function renderAIDashboardUI() {
                     </div>
                 </td>
                 <td>${patternTag}</td>
-                <td><span style="font-size:0.85rem; color:#334155; font-weight:600;">${item.aiRecommendation}</span></td>
+                <td><span style="font-size:0.85rem; ${recommendationStyle}">${item.aiRecommendation}</span></td>
             </tr>
         `;
     });

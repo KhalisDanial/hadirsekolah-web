@@ -28,67 +28,91 @@
 
     <main class="content" style="margin-left: 0; padding: 2rem; max-width: 1200px; margin: 0 auto;">
         
-        <!-- KAD STATISTIK RISIKO AI -->
-        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 2rem;">
-            <div class="card" style="border-left: 5px solid #ef4444; background: #fff5f5;">
-                <span id="ai-high-risk-count" style="color: #ef4444;">-</span>
-                <div class="stat-label" style="font-weight: 700; color: #991b1b;">Berisiko Tinggi (High Risk)</div>
-                <small style="color: #7f1d1d; font-size: 0.75rem;">Memerlukan Intervensi Segera</small>
-            </div>
-
-            <div class="card" style="border-left: 5px solid #f59e0b; background: #fffbeb;">
-                <span id="ai-med-risk-count" style="color: #d97706;">-</span>
-                <div class="stat-label" style="font-weight: 700; color: #92400e;">Berisiko Sederhana</div>
-                <small style="color: #78350f; font-size: 0.75rem;">Perlu Pemantauan Rapat</small>
-            </div>
-
-            <div class="card" style="border-left: 5px solid #a855f7; background: #faf5ff;">
-                <span id="ai-pattern-count" style="color: #9333ea;">-</span>
-                <div class="stat-label" style="font-weight: 700; color: #6b21a8;">Corak Ponteng Hari</div>
-                <small style="color: #581c87; font-size: 0.75rem;">Kekerapan Isnin/Jumaat</small>
-            </div>
-
-            <div class="card" style="border-left: 5px solid #3b82f6; background: #eff6ff;">
-                <span id="ai-late-risk-count" style="color: #2563eb;">-</span>
-                <div class="stat-label" style="font-weight: 700; color: #1e40af;">Kekerapan Lewat Fasa Awal</div>
-                <small style="color: #1e3a8a; font-size: 0.75rem;">Potensi Bertukar Ponteng</small>
-            </div>
+        <!-- MENU TAB (UNTUK PERANCANGAN MASA DEPAN) -->
+        <div style="display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; overflow-x: auto;">
+            <button class="view-tab active" style="background: #a855f7; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-exclamation-triangle"></i> Sistem Amaran Awal
+            </button>
+            <button class="view-tab" onclick="alert('Fasa Pembangunan: Analisis dan Ramalan Bajet RMT akan datang!')" style="background: transparent; color: #64748b; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                <i class="fas fa-utensils"></i> Pengoptimuman RMT
+            </button>
+            <button class="view-tab" onclick="alert('Fasa Pembangunan: Penjanaan Laporan Teks Automatik akan datang!')" style="background: transparent; color: #64748b; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                <i class="fas fa-robot"></i> Laporan Pintar (NLP)
+            </button>
         </div>
 
-        <!-- PANEL JANAAN REKOD & EXPORT -->
-        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 2rem; border: 1px solid #e2e8f0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <div>
-                    <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-list-ol" style="color: #a855f7;"></i> Senarai Analisis Prediktif Murid</h3>
-                    <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #64748b;">Diurutkan mengikut Skor Risiko Ketidakhadiran tertinggi yang dihitung oleh AI.</p>
+        <!-- KANDUNGAN TAB 1: SISTEM AMARAN AWAL -->
+        <div id="tab-early-warning">
+            <!-- KAD STATISTIK RISIKO AI (Ditambah Kad "Tiada Rekod") -->
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
+                
+                <!-- KAD BARU: 0 IMBASAN -->
+                <div class="card" style="border-left: 5px solid #000000; background: #f8f9fa;">
+                    <span id="ai-ghost-count" style="color: #000000;">-</span>
+                    <div class="stat-label" style="font-weight: 700; color: #333333;">Tiada Rekod (0 Imbasan)</div>
+                    <small style="color: #666666; font-size: 0.75rem;">Siasat Pendaftaran / Barcode</small>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button id="btn-ai-pdf" onclick="exportAIReportPDF()" class="btn-pdf" style="font-size: 0.85rem;"><i class="fas fa-file-pdf"></i> Muat Turun Laporan Kaunselor (PDF)</button>
+
+                <div class="card" style="border-left: 5px solid #ef4444; background: #fff5f5;">
+                    <span id="ai-high-risk-count" style="color: #ef4444;">-</span>
+                    <div class="stat-label" style="font-weight: 700; color: #991b1b;">Berisiko Tinggi</div>
+                    <small style="color: #7f1d1d; font-size: 0.75rem;">Perlu Intervensi Segera</small>
+                </div>
+
+                <div class="card" style="border-left: 5px solid #f59e0b; background: #fffbeb;">
+                    <span id="ai-med-risk-count" style="color: #d97706;">-</span>
+                    <div class="stat-label" style="font-weight: 700; color: #92400e;">Berisiko Sederhana</div>
+                    <small style="color: #78350f; font-size: 0.75rem;">Pemantauan Rapat</small>
+                </div>
+
+                <div class="card" style="border-left: 5px solid #a855f7; background: #faf5ff;">
+                    <span id="ai-pattern-count" style="color: #9333ea;">-</span>
+                    <div class="stat-label" style="font-weight: 700; color: #6b21a8;">Corak Ponteng Hari</div>
+                    <small style="color: #581c87; font-size: 0.75rem;">Kekerapan Isnin/Jumaat</small>
+                </div>
+
+                <div class="card" style="border-left: 5px solid #3b82f6; background: #eff6ff;">
+                    <span id="ai-late-risk-count" style="color: #2563eb;">-</span>
+                    <div class="stat-label" style="font-weight: 700; color: #1e40af;">Kekerapan Lewat</div>
+                    <small style="color: #1e3a8a; font-size: 0.75rem;">Potensi Bertukar Ponteng</small>
                 </div>
             </div>
-        </div>
 
-        <!-- JADUAL ANALISIS RISIKO -->
-        <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-            <table class="excel-style-table" id="ai-risk-table">
-                <thead>
-                    <tr style="background: #f1f5f9;">
-                        <th>No.</th>
-                        <th>Nama Murid</th>
-                        <th>Kelas</th>
-                        <th>Skor Risiko AI</th>
-                        <th>Corak Utama Ditangkap AI</th>
-                        <th>Status Cadangan Tindakan</th>
-                    </tr>
-                </thead>
-                <tbody id="ai-table-body">
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">
-                            <i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Sistem AI sedang menganalisis corak kehadiran pangkalan data...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- PANEL JANAAN REKOD & EXPORT -->
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 2rem; border: 1px solid #e2e8f0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-list-ol" style="color: #a855f7;"></i> Senarai Analisis Prediktif Murid</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #64748b;">Diurutkan mengikut Skor Risiko Ketidakhadiran tertinggi yang dihitung oleh AI.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-ai-pdf" onclick="exportAIReportPDF()" class="btn-pdf" style="font-size: 0.85rem;"><i class="fas fa-file-pdf"></i> Muat Turun Laporan Kaunselor (PDF)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JADUAL ANALISIS RISIKO -->
+            <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                <table class="excel-style-table" id="ai-risk-table">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th>No.</th>
+                            <th>Nama Murid</th>
+                            <th>Kelas</th>
+                            <th>Skor Risiko AI</th>
+                            <th>Corak Utama Ditangkap AI</th>
+                            <th>Status Cadangan Tindakan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ai-table-body">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Sistem AI sedang menganalisis corak kehadiran pangkalan data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
     </main>
