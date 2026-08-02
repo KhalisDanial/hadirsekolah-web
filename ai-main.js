@@ -245,6 +245,10 @@ window.renderAITableOnly = () => {
                         <strong style="color:${badgeColor}; font-size:1.1rem;">${item.riskScore}%</strong>
                         <span class="badge" style="background:${badgeColor}22; color:${badgeColor}; font-size:0.65rem;">${badgeText}</span>
                     </div>
+                    <!-- MAKLUMAT TAMBAHAN: HARI TIDAK HADIR -->
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 6px;">
+                        <i class="fas fa-user-times" style="opacity: 0.7;"></i> Tidak Hadir: <strong style="color: ${item.absentCount > 0 ? '#ef4444' : '#22c55e'};">${item.absentCount}</strong> Hari
+                    </div>
                 </td>
                 <td>${patternTag}</td>
                 <td><span style="font-size:0.85rem; ${recommendationStyle}">${item.aiRecommendation}</span></td>
@@ -273,7 +277,7 @@ window.exportAIReportPDF = () => {
         idx + 1,
         d.name,
         d.class_name_full || '-',
-        `${d.riskScore}% (${d.riskCategory})`,
+        `${d.riskScore}% (${d.riskCategory})\nTidak Hadir: ${d.absentCount} Hari`, // <-- Diselitkan di sini (\n untuk baris baharu)
         d.dominantDayPattern || (d.lateCount >= 3 ? `Kerap Lewat (${d.lateCount}x)` : 'Tiada Corak Khusus'),
         d.aiRecommendation
     ]);
