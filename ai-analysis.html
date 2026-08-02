@@ -85,8 +85,14 @@
                         <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-list-ol" style="color: #a855f7;"></i> Senarai Analisis Prediktif Murid</h3>
                         <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #64748b;">Diurutkan mengikut Skor Risiko Ketidakhadiran tertinggi yang dihitung oleh AI.</p>
                     </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button id="btn-ai-pdf" onclick="exportAIReportPDF()" class="btn-pdf" style="font-size: 0.85rem;"><i class="fas fa-file-pdf"></i> Muat Turun Laporan Kaunselor (PDF)</button>
+                    
+                    <!-- KOTAK CARIAN BAHARU & BUTANG PDF -->
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div style="position: relative;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                            <input type="text" id="ai-search-input" oninput="window.renderAITableOnly()" placeholder="Cari Nama atau Barcode..." style="padding: 10px 12px 10px 35px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; width: 260px; font-size: 0.9rem;">
+                        </div>
+                        <button id="btn-ai-pdf" onclick="exportAIReportPDF()" class="btn-pdf" style="font-size: 0.85rem; padding: 10px 15px;"><i class="fas fa-file-pdf"></i> Laporan (PDF)</button>
                     </div>
                 </div>
             </div>

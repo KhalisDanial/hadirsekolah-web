@@ -181,23 +181,40 @@ function renderAIDashboardUI() {
     const patternRisk = analyzedRiskData.filter(d => d.dominantDayPattern !== null);
     const lateRisk = analyzedRiskData.filter(d => d.lateCount >= 3);
 
-    // Kemas kini nombor pada kad
+    // Kemas kini nombor pada kad statistik di atas
     if (id('ai-ghost-count')) id('ai-ghost-count').innerText = ghostRisk.length;
     if (id('ai-high-risk-count')) id('ai-high-risk-count').innerText = highRisk.length;
     if (id('ai-med-risk-count')) id('ai-med-risk-count').innerText = medRisk.length;
     if (id('ai-pattern-count')) id('ai-pattern-count').innerText = patternRisk.length;
     if (id('ai-late-risk-count')) id('ai-late-risk-count').innerText = lateRisk.length;
 
+    // Panggil fungsi render jadual kali pertama
+    window.renderAITableOnly();
+}
+
+// Fungsi Khas: Render Jadual Bersama Tapisan Carian (Search Filter)
+window.renderAITableOnly = () => {
     const tbody = id('ai-table-body');
+    const searchInput = id('ai-search-input');
     if (!tbody) return;
 
-    if (analyzedRiskData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tiada data murid.</td></tr>';
+    // Tangkap teks carian (jika ada) dan tukar huruf kecil (lowercase)
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+
+    // Tapis (Filter) data pangkalan berdasarkan carian Nama ATAU Barcode
+    const filteredData = analyzedRiskData.filter(item => {
+        const matchName = item.name ? item.name.toLowerCase().includes(searchTerm) : false;
+        const matchBarcode = item.barcode ? item.barcode.toString().toLowerCase().includes(searchTerm) : false;
+        return matchName || matchBarcode;
+    });
+
+    if (filteredData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Tiada murid sepadan dengan carian.</td></tr>';
         return;
     }
 
     let rowsHtml = '';
-    analyzedRiskData.forEach((item, index) => {
+    filteredData.forEach((item, index) => {
         let badgeColor = '#22c55e';
         let badgeText = 'Rendah';
         
@@ -213,10 +230,15 @@ function renderAIDashboardUI() {
 
         const recommendationStyle = item.riskCategory === 'GHOST' ? 'color:#ef4444; font-weight: 800;' : 'color:#334155; font-weight: 600;';
 
+        // Saya tambahkan sedikit paparan ID Barcode di bawah nama murid supaya
+        // pengguna tahu bahawa mereka boleh mencari mengikut barcode!
         rowsHtml += `
             <tr>
                 <td>${index + 1}</td>
-                <td style="font-weight:700; color:#1e293b;">${item.name}</td>
+                <td>
+                    <div style="font-weight:700; color:#1e293b;">${item.name}</div>
+                    <code style="font-size: 0.75rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #64748b; margin-top: 4px; display: inline-block;">${item.barcode || '-'}</code>
+                </td>
                 <td>${item.class_name_full || '-'}</td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
@@ -231,7 +253,7 @@ function renderAIDashboardUI() {
     });
 
     tbody.innerHTML = rowsHtml;
-}
+};
 
 // 4. Eksport Laporan PDF untuk Kaunselor Sekolah
 window.exportAIReportPDF = () => {
