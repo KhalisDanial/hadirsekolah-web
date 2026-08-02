@@ -6,7 +6,15 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 let currentSchoolId = null;
-let analyzedRiskData = [];
+let currentAIView = 'murid'; // Pembolehubah untuk kawal paparan aktif ('murid' atau 'staf')
+
+let analyzedStudentData = [];
+let analyzedStaffData = [];
+
+window.globalAllAttendance = [];
+window.globalOfficialDates = new Set();
+window.globalAllStaffAttendance = [];
+window.globalOfficialStaffDates = new Set();
 
 const id = (name) => document.getElementById(name);
 
@@ -17,202 +25,193 @@ window.addEventListener('DOMContentLoaded', async () => {
         window.location.href = 'index.html';
         return;
     }
-
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('school_id')
-        .eq('id', session.user.id)
-        .single();
-
+    const { data: profile } = await supabase.from('profiles').select('school_id').eq('id', session.user.id).single();
     if (profile) {
         currentSchoolId = profile.school_id;
         await runAIPredictiveEngine();
     }
 });
 
-// 3. Enjin Klasifikasi & Pengiraan Risiko AI
+// 3. Enjin Klasifikasi & Pengiraan Risiko AI (DWI-FUNGSI)
 async function runAIPredictiveEngine() {
     const currentYear = new Date().getFullYear();
     const startDate = `${currentYear}-01-01`;
 
-    // A. Ambil Senarai Murid
-    const { data: students } = await supabase
-        .from('students')
-        .select('*')
-        .eq('school_id', currentSchoolId);
+    // --- FUNGSI PEMBANTU (HELPER) UNTUK MENGIRA DATA TANPA MENGULANG KOD ---
+    async function processAIEngine(tableName, attendanceTableName, attendanceThreshold) {
+        const { data: users } = await supabase.from(tableName).select('*').eq('school_id', currentSchoolId);
+        if (!users || users.length === 0) return { analyzed: [], allAtt: [], offDates: new Set() };
 
-    if (!students || students.length === 0) {
-        id('ai-table-body').innerHTML = '<tr><td colspan="6" style="text-align:center;">Tiada data murid dijumpai.</td></tr>';
-        return;
-    }
+        let allAtt = [];
+        let fetchMore = true;
+        let fromIndex = 0;
+        const step = 1000;
 
-    // B. Tarik Data Kehadiran Keseluruhan (Pagination Loop)
-    let allAttendance = [];
-    let fetchMore = true;
-    let fromIndex = 0;
-    const step = 1000;
+        while (fetchMore) {
+            const { data, error } = await supabase
+                .from(attendanceTableName)
+                .select('*')
+                .eq('school_id', currentSchoolId)
+                .gte('date', startDate)
+                .range(fromIndex, fromIndex + step - 1);
 
-    while (fetchMore) {
-        const { data, error } = await supabase
-            .from('students_attendance')
-            .select('*')
-            .eq('school_id', currentSchoolId)
-            .gte('date', startDate)
-            .range(fromIndex, fromIndex + step - 1);
-
-        if (error) break;
-        if (data && data.length > 0) {
-            allAttendance = allAttendance.concat(data);
-            if (data.length < step) fetchMore = false;
-            else fromIndex += step;
-        } else {
-            fetchMore = false;
+            if (error) break;
+            if (data && data.length > 0) {
+                allAtt = allAtt.concat(data);
+                if (data.length < step) fetchMore = false;
+                else fromIndex += step;
+            } else { fetchMore = false; }
         }
-    }
 
-    // C. Pengiraan Tarikh Persekolahan Rasmi (Ambang 50 imbasan)
-    const dateCounts = {};
-    allAttendance.forEach(a => {
-        dateCounts[a.date] = (dateCounts[a.date] || 0) + 1;
-    });
+        const dateCounts = {};
+        allAtt.forEach(a => { dateCounts[a.date] = (dateCounts[a.date] || 0) + 1; });
 
-    const officialDates = new Set();
-    for (const d in dateCounts) {
-        if (dateCounts[d] >= 50) officialDates.add(d);
-    }
-    const totalSchoolDays = officialDates.size;
-    // --- SIMPAN KE MEMORI GLOBAL UNTUK CARTA ---
-    window.globalAllAttendance = allAttendance;
-    window.globalOfficialDates = officialDates;
+        const offDates = new Set();
+        for (const d in dateCounts) {
+            if (dateCounts[d] >= attendanceThreshold) offDates.add(d);
+        }
+        const totalWorkingDays = offDates.size;
 
-    // D. Pengiraan Skor Risiko bagi Setiap Murid (Machine Learning Rules Engine)
-    analyzedRiskData = students.map(s => {
-        const studentScans = allAttendance.filter(a => a.student_id === s.id && officialDates.has(a.date));
-        const attendedDates = new Set(studentScans.map(a => a.date));
-        
-        const attendCount = attendedDates.size;
-        const absentCount = totalSchoolDays - attendCount;
-        
-        // --- ASPEK 1: Analisis Kekerapan Hari Ponteng ---
-        const daysOfWeekCount = { Isnin: 0, Selasa: 0, Rabu: 0, Khamis: 0, Jumaat: 0 };
-        const dayNames = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+        const analyzed = users.map(u => {
+            // Sokong padanan student_id ATAU staff_id dengan String() conversion
+            const userScans = allAtt.filter(a => String(a.student_id || a.staff_id) === String(u.id) && offDates.has(a.date));
+            const attendedDates = new Set(userScans.map(a => a.date));
+            
+            const attendCount = attendedDates.size;
+            const absentCount = totalWorkingDays - attendCount;
+            
+            const daysOfWeekCount = { Isnin: 0, Selasa: 0, Rabu: 0, Khamis: 0, Jumaat: 0 };
+            const dayNames = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
 
-        officialDates.forEach(dStr => {
-            if (!attendedDates.has(dStr)) {
-                const dayIdx = new Date(dStr).getDay();
-                const dName = dayNames[dayIdx];
-                if (daysOfWeekCount[dName] !== undefined) {
-                    daysOfWeekCount[dName]++;
+            offDates.forEach(dStr => {
+                if (!attendedDates.has(dStr)) {
+                    const dName = dayNames[new Date(dStr).getDay()];
+                    if (daysOfWeekCount[dName] !== undefined) daysOfWeekCount[dName]++;
+                }
+            });
+
+            let dominantDayPattern = null;
+            if (daysOfWeekCount['Isnin'] >= 3) dominantDayPattern = 'Ponteng Kerap Isnin';
+            else if (daysOfWeekCount['Jumaat'] >= 3) dominantDayPattern = 'Ponteng Kerap Jumaat';
+
+            let lateCount = 0;
+            userScans.forEach(sc => {
+                if (sc.timestamp) {
+                    const scanTime = new Date(sc.timestamp);
+                    const totalMins = (scanTime.getHours() * 60) + scanTime.getMinutes();
+                    if (totalMins > (7 * 60 + 30)) lateCount++; // Lewat lepas 07:30
+                }
+            });
+
+            let riskScore = 0;
+            let riskCategory = 'LOW';
+            let aiRecommendation = 'Kehadiran Memuaskan';
+
+            if (attendCount === 0 && totalWorkingDays > 0) {
+                riskScore = 100;
+                riskCategory = 'GHOST';
+                aiRecommendation = tableName === 'students' ? 'KRITIKAL: Siasat Status Pindah / Kod Bar Rosak' : 'KRITIKAL: Semak Status Staf (Pindah/Cuti Panjang)';
+            } else {
+                const absentRate = totalWorkingDays > 0 ? (absentCount / totalWorkingDays) : 0;
+                riskScore += Math.min(60, Math.round(absentRate * 100 * 1.5));
+                if (dominantDayPattern) riskScore += 15;
+                
+                if (lateCount >= 4) riskScore += 15;
+                else if (lateCount >= 2) riskScore += 8;
+
+                riskScore = Math.min(100, riskScore);
+
+                if (riskScore >= 50 || absentCount >= 5) {
+                    riskCategory = 'HIGH';
+                    aiRecommendation = tableName === 'students' ? 'Syor: Sesi Kaunseling & Surat Amaran Pertama' : 'Syor: Surat Tunjuk Sebab (Tatatertib)';
+                } else if (riskScore >= 25 || absentCount >= 3 || lateCount >= 3) {
+                    riskCategory = 'MEDIUM';
+                    aiRecommendation = tableName === 'students' ? 'Syor: Panggilan Mesra Ibu Bapa / Peringatan' : 'Syor: Teguran Lisan Pengetua/Guru Besar';
                 }
             }
+
+            return { ...u, attendCount, absentCount, lateCount, dominantDayPattern, riskScore, riskCategory, aiRecommendation };
         });
 
-        // Pengesanan Corak Hari Tertentu (Contoh: Ponteng Isnin/Jumaat tegar)
-        let dominantDayPattern = null;
-        if (daysOfWeekCount['Isnin'] >= 3) dominantDayPattern = 'Ponteng Kerap Isnin';
-        else if (daysOfWeekCount['Jumaat'] >= 3) dominantDayPattern = 'Ponteng Kerap Jumaat';
+        analyzed.sort((a, b) => b.riskScore - a.riskScore);
+        return { analyzed, allAtt, offDates };
+    }
 
-        // --- ASPEK 2: Analisis Kelewatan ---
-        // (Mengandaikan imbasan selepas 07:30 dikira lewat)
-        let lateCount = 0;
-        studentScans.forEach(sc => {
-            if (sc.timestamp) {
-                const scanTime = new Date(sc.timestamp);
-                const totalMins = (scanTime.getHours() * 60) + scanTime.getMinutes();
-                if (totalMins > (7 * 60 + 30)) lateCount++;
-            }
-        });
+    // A. Proses Data Murid (Ambang 50 Hari Sekolah)
+    const studentData = await processAIEngine('students', 'students_attendance', 50);
+    analyzedStudentData = studentData.analyzed;
+    window.globalAllAttendance = studentData.allAtt;
+    window.globalOfficialDates = studentData.offDates;
 
-        // --- ALGORITMA SKOR RISIKO AI (0 - 100%) ---
-        let riskScore = 0;
-        let riskCategory = 'LOW';
-        let aiRecommendation = 'Kehadiran Memuaskan';
+    // B. Proses Data Staf (Ambang 10 Hari Bekerja)
+    const staffData = await processAIEngine('staff', 'staff_attendance', 10);
+    analyzedStaffData = staffData.analyzed;
+    window.globalAllStaffAttendance = staffData.allAtt;
+    window.globalOfficialStaffDates = staffData.offDates;
 
-        if (attendCount === 0 && totalSchoolDays > 0) {
-            // TANGKAPAN KHAS: Murid langsung tiada rekod (Ghost Student)
-            riskScore = 100;
-            riskCategory = 'GHOST';
-            aiRecommendation = 'KRITIKAL: Siasat Status Pindah / Kod Bar Rosak';
-        } else {
-            // Komponen 1: Kadar Ponteng (Sehingga 60 Mata)
-            const absentRate = totalSchoolDays > 0 ? (absentCount / totalSchoolDays) : 0;
-            riskScore += Math.min(60, Math.round(absentRate * 100 * 1.5));
-
-            // Komponen 2: Corak Hari Khusus (15 Mata)
-            if (dominantDayPattern) riskScore += 15;
-
-            // Komponen 3: Kekerapan Lewat (15 Mata)
-            if (lateCount >= 4) riskScore += 15;
-            else if (lateCount >= 2) riskScore += 8;
-
-            // Cap Skor Maksimum 100%
-            riskScore = Math.min(100, riskScore);
-
-            // Kategori Risiko AI Biasa
-            if (riskScore >= 50 || absentCount >= 5) {
-                riskCategory = 'HIGH';
-                aiRecommendation = 'Syor: Sesi Kaunseling & Surat Amaran Pertama';
-            } else if (riskScore >= 25 || absentCount >= 3 || lateCount >= 3) {
-                riskCategory = 'MEDIUM';
-                aiRecommendation = 'Syor: Panggilan Mesra Ibu Bapa / Peringatan Kelas';
-            }
-        }
-
-        return {
-            ...s,
-            attendCount,
-            absentCount,
-            lateCount,
-            dominantDayPattern,
-            riskScore,
-            riskCategory,
-            aiRecommendation
-        };
-    });
-
-    // Isih mengikut skor risiko tertinggi ke terendah
-    analyzedRiskData.sort((a, b) => b.riskScore - a.riskScore);
-
-    // E. Kemas kini UI Dashboard
     renderAIDashboardUI();
 }
 
-function renderAIDashboardUI() {
-    const ghostRisk = analyzedRiskData.filter(d => d.riskCategory === 'GHOST');
-    const highRisk = analyzedRiskData.filter(d => d.riskCategory === 'HIGH');
-    const medRisk = analyzedRiskData.filter(d => d.riskCategory === 'MEDIUM');
-    const patternRisk = analyzedRiskData.filter(d => d.dominantDayPattern !== null);
-    const lateRisk = analyzedRiskData.filter(d => d.lateCount >= 3);
+// 4. Fungsi Pertukaran Togol (Murid <-> Staf)
+window.switchAIView = (view) => {
+    currentAIView = view;
+    const btnMurid = id('btn-view-murid');
+    const btnStaf = id('btn-view-staf');
+    const searchInput = id('ai-search-input');
+    
+    // Reset carian bila tukar tab
+    if (searchInput) searchInput.value = '';
 
-    // Kemas kini nombor pada kad statistik di atas
+    if (view === 'murid') {
+        btnMurid.style.background = 'white'; btnMurid.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; btnMurid.style.color = '#0f172a';
+        btnStaf.style.background = 'transparent'; btnStaf.style.boxShadow = 'none'; btnStaf.style.color = '#64748b';
+        id('th-name').innerText = 'Nama Murid';
+        id('th-role').innerText = 'Kelas';
+    } else {
+        btnStaf.style.background = 'white'; btnStaf.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; btnStaf.style.color = '#0f172a';
+        btnMurid.style.background = 'transparent'; btnMurid.style.boxShadow = 'none'; btnMurid.style.color = '#64748b';
+        id('th-name').innerText = 'Nama Staf (Guru/AKP)';
+        id('th-role').innerText = 'Jawatan';
+    }
+    
+    renderAIDashboardUI();
+};
+
+function renderAIDashboardUI() {
+    // Pilih sumber data berdasarkan paparan aktif
+    const activeData = currentAIView === 'murid' ? analyzedStudentData : analyzedStaffData;
+
+    const ghostRisk = activeData.filter(d => d.riskCategory === 'GHOST');
+    const highRisk = activeData.filter(d => d.riskCategory === 'HIGH');
+    const medRisk = activeData.filter(d => d.riskCategory === 'MEDIUM');
+    const patternRisk = activeData.filter(d => d.dominantDayPattern !== null);
+    const lateRisk = activeData.filter(d => d.lateCount >= 3);
+
     if (id('ai-ghost-count')) id('ai-ghost-count').innerText = ghostRisk.length;
     if (id('ai-high-risk-count')) id('ai-high-risk-count').innerText = highRisk.length;
     if (id('ai-med-risk-count')) id('ai-med-risk-count').innerText = medRisk.length;
     if (id('ai-pattern-count')) id('ai-pattern-count').innerText = patternRisk.length;
     if (id('ai-late-risk-count')) id('ai-late-risk-count').innerText = lateRisk.length;
 
-    // Panggil fungsi render jadual kali pertama
     window.renderAITableOnly();
 }
 
-// Fungsi Khas: Render Jadual Bersama Tapisan Carian (Search Filter)
 window.renderAITableOnly = () => {
     const tbody = id('ai-table-body');
     const searchInput = id('ai-search-input');
     if (!tbody) return;
 
-    // Tangkap teks carian (jika ada) dan tukar huruf kecil (lowercase)
+    const activeData = currentAIView === 'murid' ? analyzedStudentData : analyzedStaffData;
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
 
-    // Tapis (Filter) data pangkalan berdasarkan carian Nama ATAU Barcode
-    const filteredData = analyzedRiskData.filter(item => {
+    const filteredData = activeData.filter(item => {
         const matchName = item.name ? item.name.toLowerCase().includes(searchTerm) : false;
         const matchBarcode = item.barcode ? item.barcode.toString().toLowerCase().includes(searchTerm) : false;
         return matchName || matchBarcode;
     });
 
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Tiada murid sepadan dengan carian.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem;">Tiada rekod sepadan ditemui.</td></tr>';
         return;
     }
 
@@ -232,9 +231,8 @@ window.renderAITableOnly = () => {
                 : (item.lateCount >= 3 ? `<span style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;">Kerap Lewat (${item.lateCount}x)</span>` : '<span style="color:#94a3b8;">Normal</span>'));
 
         const recommendationStyle = item.riskCategory === 'GHOST' ? 'color:#ef4444; font-weight: 800;' : 'color:#334155; font-weight: 600;';
+        const displayRole = currentAIView === 'murid' ? (item.class_name_full || '-') : (item.role || '-');
 
-        // Saya tambahkan sedikit paparan ID Barcode di bawah nama murid supaya
-        // pengguna tahu bahawa mereka boleh mencari mengikut barcode!
         rowsHtml += `
             <tr>
                 <td>${index + 1}</td>
@@ -242,13 +240,12 @@ window.renderAITableOnly = () => {
                     <div style="font-weight:700; color:#1e293b;">${item.name}</div>
                     <code style="font-size: 0.75rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #64748b; margin-top: 4px; display: inline-block;">${item.barcode || '-'}</code>
                 </td>
-                <td>${item.class_name_full || '-'}</td>
+                <td>${displayRole}</td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <strong style="color:${badgeColor}; font-size:1.1rem;">${item.riskScore}%</strong>
                         <span class="badge" style="background:${badgeColor}22; color:${badgeColor}; font-size:0.65rem;">${badgeText}</span>
                     </div>
-                    <!-- MAKLUMAT TAMBAHAN: HARI TIDAK HADIR -->
                     <div style="font-size: 0.75rem; color: #64748b; margin-top: 6px;">
                         <i class="fas fa-user-times" style="opacity: 0.7;"></i> Tidak Hadir: <strong style="color: ${item.absentCount > 0 ? '#ef4444' : '#22c55e'};">${item.absentCount}</strong> Hari
                     </div>
@@ -267,75 +264,72 @@ window.renderAITableOnly = () => {
     tbody.innerHTML = rowsHtml;
 };
 
-// 4. Eksport Laporan PDF untuk Kaunselor Sekolah
+// 5. Eksport Laporan PDF Mengikut Kumpulan (Murid/Staf)
 window.exportAIReportPDF = () => {
-    if (!analyzedRiskData || analyzedRiskData.length === 0) return alert("Tiada data analisis AI.");
+    const activeData = currentAIView === 'murid' ? analyzedStudentData : analyzedStaffData;
+    if (!activeData || activeData.length === 0) return alert("Tiada data analisis AI untuk dieksport.");
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
     doc.setFontSize(16);
-    doc.text("Laporan Analisis Prediktif Risiko Ponteng (AI)", 14, 15);
+    doc.text(`Laporan Analisis Risiko Kehadiran (AI) - ${currentAIView === 'murid' ? 'Kategori Murid' : 'Kategori Guru & AKP'}`, 14, 15);
     doc.setFontSize(10);
     doc.text(`Tarikh Janaan: ${new Date().toLocaleDateString('ms-MY')}`, 14, 22);
 
-    const highRiskOnly = analyzedRiskData.filter(d => d.riskCategory === 'HIGH' || d.riskCategory === 'MEDIUM');
+    const highRiskOnly = activeData.filter(d => d.riskCategory === 'HIGH' || d.riskCategory === 'MEDIUM');
 
     const body = highRiskOnly.map((d, idx) => [
         idx + 1,
         d.name,
-        d.class_name_full || '-',
-        `${d.riskScore}% (${d.riskCategory})\nTidak Hadir: ${d.absentCount} Hari`, // <-- Diselitkan di sini (\n untuk baris baharu)
+        currentAIView === 'murid' ? (d.class_name_full || '-') : (d.role || '-'),
+        `${d.riskScore}% (${d.riskCategory})\nTidak Hadir: ${d.absentCount} Hari`,
         d.dominantDayPattern || (d.lateCount >= 3 ? `Kerap Lewat (${d.lateCount}x)` : 'Tiada Corak Khusus'),
         d.aiRecommendation
     ]);
 
     doc.autoTable({
         startY: 28,
-        head: [['Bil.', 'Nama Murid', 'Kelas', 'Skor Risiko', 'Corak Dikesan', 'Tindakan Disyorkan']],
+        head: [['Bil.', 'Nama', currentAIView === 'murid' ? 'Kelas' : 'Jawatan', 'Skor Risiko', 'Corak Dikesan', 'Tindakan Disyorkan']],
         body: body,
         theme: 'grid',
-        headStyles: { fillColor: [147, 51, 234] }, // Tema warna Ungu AI
+        headStyles: { fillColor: [147, 51, 234] }, 
         styles: { fontSize: 8 }
     });
 
-    doc.save(`Laporan_AI_Risiko_Ponteng_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`Laporan_AI_Risiko_${currentAIView === 'murid' ? 'Murid' : 'Staf'}_${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
-// ==========================================
-// --- FUNGSI JANAAN GRAF PRESTASI BULANAN ---
-// ==========================================
-let performanceChart = null; // Pembolehubah global untuk memadam graf lama
+// 6. FUNGSI JANAAN GRAF PRESTASI BULANAN
+let performanceChart = null;
 
-window.openStudentChart = (studentId, studentName) => {
-    // 1. Paparkan Modal
+window.openStudentChart = (userId, userName) => {
     const modal = document.getElementById('ai-chart-modal');
-    document.getElementById('ai-chart-student-name').innerText = studentName;
+    document.getElementById('ai-chart-student-name').innerText = userName;
     modal.style.display = 'flex';
 
-    // 2. Tarik Data Global
-    // Balut dengan String() untuk menyelesaikan konflik Integer vs String
-    const scans = window.globalAllAttendance.filter(a => String(a.student_id) === String(studentId));
+    // Pilih data pangkalan yang betul berdasarkan tab aktif
+    const activeScans = currentAIView === 'murid' ? window.globalAllAttendance : window.globalAllStaffAttendance;
+    const activeDates = currentAIView === 'murid' ? window.globalOfficialDates : window.globalOfficialStaffDates;
+
+    const scans = activeScans.filter(a => String(a.student_id || a.staff_id) === String(userId));
     const scanDates = new Set(scans.map(a => a.date));
 
-    // 3. Susun Tarikh Mengikut Bulan (Jan - Dis)
     const monthsMy = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
     const monthlyData = {};
     for (let i = 0; i < 12; i++) {
         monthlyData[i] = { schoolDays: 0, absent: 0, late: 0 };
     }
 
-    // Kira Kehadiran & Kelewatan berdasarkan Kalendar Sekolah Rasmi
-    window.globalOfficialDates.forEach(dateStr => {
+    activeDates.forEach(dateStr => {
         const dObj = new Date(dateStr);
         const monthIdx = dObj.getMonth();
         
         monthlyData[monthIdx].schoolDays++;
 
         if (!scanDates.has(dateStr)) {
-            monthlyData[monthIdx].absent++; // Murid Tidak Hadir
+            monthlyData[monthIdx].absent++; 
         } else {
-            // Check jika lewat (Selepas 07:30)
             const scanRecord = scans.find(s => s.date === dateStr);
             if (scanRecord && scanRecord.timestamp) {
                 const st = new Date(scanRecord.timestamp);
@@ -347,7 +341,6 @@ window.openStudentChart = (studentId, studentName) => {
         }
     });
 
-    // 4. Siapkan Data untuk Chart.js (Hanya buang bulan yang tiada sekolah langsung)
     const chartLabels = [];
     const absentDataset = [];
     const lateDataset = [];
@@ -360,10 +353,8 @@ window.openStudentChart = (studentId, studentName) => {
         }
     }
 
-    // 5. Bina Graf Menggunakan Chart.js
     const ctx = document.getElementById('studentPerformanceChart').getContext('2d');
     
-    // Padam graf lama jika ada (supaya tidak overlap bila tekan murid lain)
     if (performanceChart) {
         performanceChart.destroy();
     }
@@ -376,7 +367,7 @@ window.openStudentChart = (studentId, studentName) => {
                 {
                     label: 'Tidak Hadir (Hari)',
                     data: absentDataset,
-                    backgroundColor: 'rgba(239, 68, 68, 0.7)', // Merah
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
                     borderColor: 'rgb(239, 68, 68)',
                     borderWidth: 1,
                     borderRadius: 4
@@ -384,7 +375,7 @@ window.openStudentChart = (studentId, studentName) => {
                 {
                     label: 'Kerap Lewat (Kali)',
                     data: lateDataset,
-                    backgroundColor: 'rgba(245, 158, 11, 0.7)', // Kuning/Oren
+                    backgroundColor: 'rgba(245, 158, 11, 0.7)', 
                     borderColor: 'rgb(245, 158, 11)',
                     borderWidth: 1,
                     borderRadius: 4
@@ -395,15 +386,9 @@ window.openStudentChart = (studentId, studentName) => {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { precision: 0 }, // Hanya nombor bulat (takkan ada 1.5 hari ponteng)
-                    title: { display: true, text: 'Jumlah Kekerapan' }
-                }
+                y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Jumlah Kekerapan' } }
             },
-            plugins: {
-                legend: { position: 'top' }
-            }
+            plugins: { legend: { position: 'top' } }
         }
     });
 };

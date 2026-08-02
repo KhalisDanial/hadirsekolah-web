@@ -44,6 +44,12 @@
 
         <!-- KANDUNGAN TAB 1: SISTEM AMARAN AWAL -->
         <div id="tab-early-warning">
+            <!-- BUTANG TOGOL MURID / STAF -->
+            <div style="display: flex; background: #e2e8f0; border-radius: 8px; padding: 4px; max-width: 320px; margin-bottom: 20px;">
+                <button id="btn-view-murid" onclick="window.switchAIView('murid')" style="flex: 1; padding: 10px; border-radius: 6px; border: none; background: white; font-weight: bold; color: #0f172a; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: 0.3s; font-size: 0.9rem;">👨‍🎓 Murid</button>
+                <button id="btn-view-staf" onclick="window.switchAIView('staf')" style="flex: 1; padding: 10px; border-radius: 6px; border: none; background: transparent; font-weight: bold; color: #64748b; cursor: pointer; transition: 0.3s; font-size: 0.9rem;">👨‍🏫 Guru / AKP</button>
+            </div>
+
             <!-- KAD STATISTIK RISIKO AI (Ditambah Kad "Tiada Rekod") -->
             <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
                 
@@ -104,12 +110,12 @@
                     <thead>
                         <tr style="background: #f1f5f9;">
                             <th>No.</th>
-                            <th>Nama Murid</th>
-                            <th>Kelas</th>
+                            <th id="th-name">Nama Murid</th>
+                            <th id="th-role">Kelas</th>
                             <th>Skor Risiko AI</th>
                             <th>Corak Utama</th>
                             <th>Status Cadangan Tindakan</th>
-                            <th>Tindakan</th> <!-- LAJUR BAHARU -->
+                            <th>Tindakan</th>
                         </tr>
                     </thead>
                     <tbody id="ai-table-body">
