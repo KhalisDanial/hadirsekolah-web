@@ -1917,17 +1917,7 @@ window.openStudentCard = async (studentId) => {
     const startDate = `${currentYear}-01-01`;
 
     try {
-        // 2. Dapatkan jumlah hari murid ini hadir (Count sahaja, lebih laju)
-        const { count: studentDays, error: err1 } = await supabase
-            .from('students_attendance')
-            .select('*', { count: 'exact', head: true })
-            .eq('student_id', studentId)
-            .gte('date', startDate);
-
-        if (err1) throw err1;
-
-        // 3. Dapatkan jumlah Hari Persekolahan Sebenar (Kiraan Bijak)
-        // Kita ambil semua rekod kehadiran sekolah tahun ini, dan hanya kira tarikh yang unik (Distinct Dates)
+        // --- 1. DAPATKAN SEMUA TARIKH IMBASAN KESELURUHAN SEKOLAH ---
         const { data: allDates, error: err2 } = await supabase
             .from('students_attendance')
             .select('date')
@@ -1936,21 +1926,59 @@ window.openStudentCard = async (studentId) => {
 
         if (err2) throw err2;
 
+        let officialSchoolDates = new Set(); // Hanya simpan tarikh sekolah yang sah
         let totalSchoolDays = 0;
+
         if (allDates) {
-            // Set() secara automatik membuang tarikh yang berulang. 
-            // Jadi 500 rekod pada 1 Ogos akan dikira sebagai 1 hari sekolah.
-            totalSchoolDays = new Set(allDates.map(d => d.date)).size;
+            // A. Kumpul jumlah imbasan murid untuk setiap tarikh
+            const dateCounts = {};
+            allDates.forEach(d => {
+                dateCounts[d.date] = (dateCounts[d.date] || 0) + 1;
+            });
+
+            // B. AMBANG MINIMUM (Threshold)
+            // Kira sebagai "Hari Sekolah" HANYA JIKA 50 atau lebih murid mengimbas
+            const MINIMUM_STUDENT_SCANS = 50; 
+
+            // C. Masukkan tarikh yang melepasi ambang ke dalam senarai rasmi
+            for (const date in dateCounts) {
+                if (dateCounts[date] >= MINIMUM_STUDENT_SCANS) {
+                    officialSchoolDates.add(date);
+                }
+            }
+            totalSchoolDays = officialSchoolDates.size;
         }
 
-        // 4. Kira Peratusan
-        const attendCount = studentDays || 0;
+        // --- 2. DAPATKAN TARIKH IMBASAN MURID INI SAHAJA ---
+        const { data: studentRecords, error: err1 } = await supabase
+            .from('students_attendance')
+            .select('date')
+            .eq('student_id', studentId)
+            .gte('date', startDate);
+
+        if (err1) throw err1;
+
+        let attendCount = 0;
+
+        if (studentRecords) {
+            // Gunakan Set() untuk membuang tarikh imbasan yang berulang pada hari yang sama
+            const uniqueStudentDates = new Set(studentRecords.map(d => d.date));
+
+            // HANYA kira kehadiran peribadi murid JIKA tarikh tersebut wujud dalam senarai Hari Sekolah Rasmi
+            uniqueStudentDates.forEach(date => {
+                if (officialSchoolDates.has(date)) {
+                    attendCount++;
+                }
+            });
+        }
+
+        // --- 3. KIRA PERATUSAN ---
         let percentage = 0;
         if (totalSchoolDays > 0) {
             percentage = Math.round((attendCount / totalSchoolDays) * 100);
         }
 
-        // 5. Kemas kini antaramuka dengan data sebenar
+        // --- 4. KEMAS KINI ANTARAMUKA DENGAN DATA SEBENAR ---
         id('card-attend-days').innerText = attendCount;
         id('card-total-days').innerText = totalSchoolDays;
         id('card-percentage').innerText = `${percentage}%`;
@@ -1959,7 +1987,7 @@ window.openStudentCard = async (studentId) => {
         const progressBar = id('card-progress-bar');
         progressBar.style.width = `${percentage}%`;
         
-        // Tukar warna palang mengikut prestasi (Merah jika < 80%, Hijau jika > 80%)
+        // Tukar warna palang mengikut prestasi (Merah jika < 80%, Hijau jika >= 80%)
         if (percentage < 80) {
             progressBar.style.background = '#ef4444'; // Merah
             id('card-percentage').style.color = '#ef4444';
@@ -1968,7 +1996,7 @@ window.openStudentCard = async (studentId) => {
             id('card-percentage').style.color = '#334155';
         }
 
-        // 6. Tarikh Setakat Hari Ini (Format Bahasa Melayu)
+        // 5. Tarikh Setakat Hari Ini (Format Bahasa Melayu)
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         const todayStr = new Date().toLocaleDateString('ms-MY', options);
         id('card-date-text').innerText = `Setakat ${todayStr}`;
@@ -2034,7 +2062,7 @@ window.openStaffCard = async (staffId) => {
                 dateCounts[d.date] = (dateCounts[d.date] || 0) + 1;
             });
 
-            const MINIMUM_STAFF_SCANS = 5; 
+            const MINIMUM_STAFF_SCANS = 10; 
 
             // Masukkan tarikh yang melepasi ambang ke dalam senarai rasmi
             for (const date in dateCounts) {
