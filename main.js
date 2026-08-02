@@ -525,11 +525,12 @@ function renderMuridTable() {
         // Display the scan time we formatted during fetch, or a dash if absent
         const timeDisplay = record ? record.scan_time_display : '-';
 
+        // UBAH: Letak 'onclick' pada baris <tr> dan serlahkan nama murid
         rowsHtml += `
-            <tr>
+            <tr class="clickable-row" onclick="openStudentCard(${s.id})" title="Klik untuk lihat Kad Profil">
                 <td>${visibleIndex++}</td>
-                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img clickable-avatar" onerror="this.src='default-avatar.png'" onclick="openStudentCard(${s.id})" title="Klik untuk lihat Kad Profil"></td>
-                <td>${s.name}</td>
+                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'"></td>
+                <td style="font-weight: 600; color: var(--primary);">${s.name}</td>
                 <td><code class="barcode-text">${s.barcode}</code></td>
                 <td>${timeDisplay}</td>
                 <td>${statusBadge}</td>
@@ -712,12 +713,12 @@ function renderGuruTable(roleFilter = 'SEMUA') {
             }
         }
 
-        // UBAH BARIS INI: Tambah class 'clickable-avatar' & 'onclick' untuk memanggil profil staf
+        // UBAH: Letak 'onclick' pada baris <tr> untuk profil staf
         htmlContent += `
-            <tr>
+            <tr class="clickable-row" onclick="openStaffCard(${s.id})" title="Klik untuk lihat Kad Profil">
                 <td>${visibleIndex++}</td>
-                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img clickable-avatar" onerror="this.src='default-avatar.png'" onclick="openStaffCard(${s.id})" title="Klik untuk lihat Kad Profil"></td>
-                <td>${s.honorific_title || ''} ${s.nama || s.name} ${lateIndicator}</td>
+                <td><img src="${s.photo_url || 'default-avatar.png'}" class="staff-img" onerror="this.src='default-avatar.png'"></td>
+                <td style="font-weight: 600; color: var(--primary);">${s.honorific_title || ''} ${s.nama || s.name} ${lateIndicator}</td>
                 <td><code class="barcode-text">${s.barcode}</code></td>
                 <td>${record?.clock_in || '-'}</td>
                 <td>${record?.clock_out || '-'}</td>

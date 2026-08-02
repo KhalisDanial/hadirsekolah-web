@@ -1179,6 +1179,43 @@ input:checked + .slider:before { transform: translateX(20px); }
     transform: translateY(-1px);
 }
 
+/* --- BARIS JADUAL BOLEH DIKLIK --- */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+.clickable-row:hover {
+    background-color: #f1f5f9;
+    transform: scale(1.01); /* Baris timbul sedikit bila di-hover */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    position: relative; /* Kekalkan bayang di atas baris lain */
+    z-index: 10;
+}
+
+/* --- KAWALAN TARIKH (ANAK PANAH & NAMA HARI) --- */
+.btn-date-nav {
+    background-color: #e2e8f0;
+    color: #334155;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-date-nav:hover {
+    background-color: #cbd5e0;
+}
+.day-display-text {
+    font-weight: 700;
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.1);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 /* =========================================
    MOBILE RESPONSIVENESS (SMARTPHONE VIEW)
    DIKEMASKINI: Profil & Tarikh Di Atas
