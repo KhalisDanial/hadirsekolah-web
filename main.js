@@ -1917,30 +1917,46 @@ window.openStudentCard = async (studentId) => {
     const startDate = `${currentYear}-01-01`;
 
     try {
-        // --- 1. DAPATKAN SEMUA TARIKH IMBASAN KESELURUHAN SEKOLAH ---
-        const { data: allDates, error: err2 } = await supabase
-            .from('students_attendance')
-            .select('date')
-            .eq('school_id', currentSchoolId)
-            .gte('date', startDate);
+        // --- 1. DAPATKAN SEMUA TARIKH IMBASAN (TEKNIK PAGINATION) ---
+        let allDates = [];
+        let fetchMore = true;
+        let fromIndex = 0;
+        const step = 1000;
 
-        if (err2) throw err2;
+        // Loop ini akan berputar menarik data 1000 demi 1000 sehingga habis
+        while (fetchMore) {
+            const { data, error: err2 } = await supabase
+                .from('students_attendance')
+                .select('date')
+                .eq('school_id', currentSchoolId)
+                .gte('date', startDate)
+                .range(fromIndex, fromIndex + step - 1);
 
-        let officialSchoolDates = new Set(); // Hanya simpan tarikh sekolah yang sah
+            if (err2) throw err2;
+            
+            if (data && data.length > 0) {
+                allDates = allDates.concat(data);
+                if (data.length < step) {
+                    fetchMore = false; // Berhenti jika baki data kurang dari 1000
+                } else {
+                    fromIndex += step; // Teruskan ke 1000 seterusnya
+                }
+            } else {
+                fetchMore = false;
+            }
+        }
+
+        let officialSchoolDates = new Set(); 
         let totalSchoolDays = 0;
 
-        if (allDates) {
-            // A. Kumpul jumlah imbasan murid untuk setiap tarikh
+        if (allDates.length > 0) {
             const dateCounts = {};
             allDates.forEach(d => {
                 dateCounts[d.date] = (dateCounts[d.date] || 0) + 1;
             });
 
-            // B. AMBANG MINIMUM (Threshold)
-            // Kira sebagai "Hari Sekolah" HANYA JIKA 50 atau lebih murid mengimbas
             const MINIMUM_STUDENT_SCANS = 50; 
 
-            // C. Masukkan tarikh yang melepasi ambang ke dalam senarai rasmi
             for (const date in dateCounts) {
                 if (dateCounts[date] >= MINIMUM_STUDENT_SCANS) {
                     officialSchoolDates.add(date);
@@ -1950,6 +1966,7 @@ window.openStudentCard = async (studentId) => {
         }
 
         // --- 2. DAPATKAN TARIKH IMBASAN MURID INI SAHAJA ---
+        // (Tidak perlukan pagination kerana murid takkan hadir lebih 1000 hari setahun)
         const { data: studentRecords, error: err1 } = await supabase
             .from('students_attendance')
             .select('date')
@@ -1961,10 +1978,8 @@ window.openStudentCard = async (studentId) => {
         let attendCount = 0;
 
         if (studentRecords) {
-            // Gunakan Set() untuk membuang tarikh imbasan yang berulang pada hari yang sama
             const uniqueStudentDates = new Set(studentRecords.map(d => d.date));
 
-            // HANYA kira kehadiran peribadi murid JIKA tarikh tersebut wujud dalam senarai Hari Sekolah Rasmi
             uniqueStudentDates.forEach(date => {
                 if (officialSchoolDates.has(date)) {
                     attendCount++;
@@ -1978,25 +1993,22 @@ window.openStudentCard = async (studentId) => {
             percentage = Math.round((attendCount / totalSchoolDays) * 100);
         }
 
-        // --- 4. KEMAS KINI ANTARAMUKA DENGAN DATA SEBENAR ---
+        // --- 4. KEMAS KINI ANTARAMUKA ---
         id('card-attend-days').innerText = attendCount;
         id('card-total-days').innerText = totalSchoolDays;
         id('card-percentage').innerText = `${percentage}%`;
         
-        // Animasi peratusan warna
         const progressBar = id('card-progress-bar');
         progressBar.style.width = `${percentage}%`;
         
-        // Tukar warna palang mengikut prestasi (Merah jika < 80%, Hijau jika >= 80%)
         if (percentage < 80) {
-            progressBar.style.background = '#ef4444'; // Merah
+            progressBar.style.background = '#ef4444'; 
             id('card-percentage').style.color = '#ef4444';
         } else {
-            progressBar.style.background = '#22c55e'; // Hijau
+            progressBar.style.background = '#22c55e'; 
             id('card-percentage').style.color = '#334155';
         }
 
-        // 5. Tarikh Setakat Hari Ini (Format Bahasa Melayu)
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         const todayStr = new Date().toLocaleDateString('ms-MY', options);
         id('card-date-text').innerText = `Setakat ${todayStr}`;
@@ -2044,19 +2056,38 @@ window.openStaffCard = async (staffId) => {
     const startDate = `${currentYear}-01-01`;
 
     try {
-        // --- 1. DAPATKAN SEMUA TARIKH IMBASAN KESELURUHAN SEKOLAH ---
-        const { data: allDates, error: err2 } = await supabase
-            .from('teacher_attendance')
-            .select('date')
-            .eq('school_id', currentSchoolId)
-            .gte('date', startDate);
+        // --- 1. DAPATKAN SEMUA TARIKH IMBASAN KESELURUHAN SEKOLAH (PAGINATION) ---
+        let allDates = [];
+        let fetchMore = true;
+        let fromIndex = 0;
+        const step = 1000;
 
-        if (err2) throw err2;
+        while (fetchMore) {
+            const { data, error: err2 } = await supabase
+                .from('teacher_attendance')
+                .select('date')
+                .eq('school_id', currentSchoolId)
+                .gte('date', startDate)
+                .range(fromIndex, fromIndex + step - 1);
 
-        let officialWorkDates = new Set(); // Simpan tarikh rasmi sahaja
+            if (err2) throw err2;
+
+            if (data && data.length > 0) {
+                allDates = allDates.concat(data);
+                if (data.length < step) {
+                    fetchMore = false; 
+                } else {
+                    fromIndex += step; 
+                }
+            } else {
+                fetchMore = false;
+            }
+        }
+
+        let officialWorkDates = new Set(); 
         let totalWorkDays = 0;
         
-        if (allDates) {
+        if (allDates.length > 0) {
             const dateCounts = {};
             allDates.forEach(d => {
                 dateCounts[d.date] = (dateCounts[d.date] || 0) + 1;
@@ -2064,7 +2095,6 @@ window.openStaffCard = async (staffId) => {
 
             const MINIMUM_STAFF_SCANS = 10; 
 
-            // Masukkan tarikh yang melepasi ambang ke dalam senarai rasmi
             for (const date in dateCounts) {
                 if (dateCounts[date] >= MINIMUM_STAFF_SCANS) {
                     officialWorkDates.add(date); 
@@ -2085,10 +2115,8 @@ window.openStaffCard = async (staffId) => {
         let attendCount = 0;
 
         if (staffRecords) {
-            // Gunakan Set() untuk buang imbasan berulang pada hari yang sama (anti-spam)
             const uniqueStaffDates = new Set(staffRecords.map(d => d.date));
             
-            // HANYA kira kehadiran jika tarikh itu wujud dalam senarai Hari Bekerja Rasmi
             uniqueStaffDates.forEach(date => {
                 if (officialWorkDates.has(date)) {
                     attendCount++;
@@ -2107,7 +2135,6 @@ window.openStaffCard = async (staffId) => {
         id('staff-card-total-days').innerText = totalWorkDays;
         id('staff-card-percentage').innerText = `${percentage}%`;
         
-        // Animasi peratusan warna
         const progressBar = id('staff-card-progress-bar');
         progressBar.style.width = `${percentage}%`;
         
