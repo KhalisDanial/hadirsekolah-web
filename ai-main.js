@@ -314,7 +314,8 @@ window.openStudentChart = (studentId, studentName) => {
     modal.style.display = 'flex';
 
     // 2. Tarik Data Global
-    const scans = window.globalAllAttendance.filter(a => a.student_id === studentId);
+    // Balut dengan String() untuk menyelesaikan konflik Integer vs String
+    const scans = window.globalAllAttendance.filter(a => String(a.student_id) === String(studentId));
     const scanDates = new Set(scans.map(a => a.date));
 
     // 3. Susun Tarikh Mengikut Bulan (Jan - Dis)
