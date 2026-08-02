@@ -450,44 +450,83 @@
         </div>
     </div>
 
-    <!-- KAD PROFIL MINI STAF -->
+    <!-- KAD PROFIL MINI STAF & PANDUAN -->
     <div id="staff-card-modal" class="modal hidden">
-        <div class="modal-content" style="max-width: 380px; padding: 0; overflow: hidden;">
-            <!-- Butang Tutup (Terapung) -->
-            <button type="button" class="close-modal-btn" onclick="closeStaffCard()" style="position: absolute; right: 15px; top: 15px; color: white; z-index: 10;">&times;</button>
+        <!-- Flex Container untuk susunan sebelah menyebelah -->
+        <div class="modal-flex-wrapper">
+            <!-- Butang Tutup Global -->
+            <button type="button" class="close-modal-btn floating-close" onclick="closeStaffCard()">&times;</button>
             
-            <!-- Bahagian Atas Kad (Header - Tema Ungu/Indigo untuk Guru) -->
-            <div style="background: linear-gradient(135deg, #8b5cf6, #5b21b6); padding: 30px 20px 20px; text-align: center; color: white; position: relative;">
-                <img id="staff-card-img" src="default-avatar.png" alt="Profil Staf" 
-                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 15px; background: white;">
-                <h3 id="staff-card-name" style="margin: 0; font-size: 1.2rem; font-weight: 700;">Nama Staf</h3>
-                <span id="staff-card-role" style="display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 8px;">Jawatan</span>
+            <!-- BAHAGIAN KIRI: KAD PROFIL ASAL -->
+            <div class="modal-content" style="max-width: 380px; padding: 0; overflow: hidden; position: relative;">
+                <!-- Bahagian Atas Kad -->
+                <div style="background: linear-gradient(135deg, #8b5cf6, #5b21b6); padding: 30px 20px 20px; text-align: center; color: white; position: relative;">
+                    <img id="staff-card-img" src="default-avatar.png" alt="Profil Staf" 
+                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 15px; background: white;">
+                    <h3 id="staff-card-name" style="margin: 0; font-size: 1.2rem; font-weight: 700;">Nama Staf</h3>
+                    <span id="staff-card-role" style="display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 8px;">Jawatan</span>
+                </div>
+
+                <!-- Bahagian Bawah Kad -->
+                <div style="padding: 25px 20px; background: white; text-align: center;">
+                    <h4 style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Ringkasan Kehadiran Sesi <span id="staff-card-year">2026</span></h4>
+                    
+                    <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+                        <div>
+                            <div id="staff-card-attend-days" style="font-size: 1.8rem; font-weight: 800; color: #22c55e;">0</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">HARI HADIR</div>
+                        </div>
+                        <div style="width: 1px; background: #e2e8f0;"></div>
+                        <div>
+                            <div id="staff-card-total-days" style="font-size: 1.8rem; font-weight: 800; color: #8b5cf6;">0</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">HARI BEKERJA</div>
+                        </div>
+                    </div>
+
+                    <!-- Palang Peratusan -->
+                    <div style="background: #f1f5f9; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; margin-bottom: 8px;">
+                        <div id="staff-card-progress-bar" style="background: #22c55e; height: 100%; width: 0%; transition: width 0.5s ease-in-out;"></div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span id="staff-card-date-text" style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">Setakat...</span>
+                        <span id="staff-card-percentage" style="font-size: 1.2rem; font-weight: 800; color: #334155;">0%</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Bahagian Bawah Kad (Statistik) -->
-            <div style="padding: 25px 20px; background: white; text-align: center;">
-                <h4 style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Ringkasan Kehadiran Sesi <span id="staff-card-year">2026</span></h4>
-                
-                <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
-                    <div>
-                        <div id="staff-card-attend-days" style="font-size: 1.8rem; font-weight: 800; color: #22c55e;">0</div>
-                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">HARI HADIR</div>
-                    </div>
-                    <div style="width: 1px; background: #e2e8f0;"></div>
-                    <div>
-                        <div id="staff-card-total-days" style="font-size: 1.8rem; font-weight: 800; color: #8b5cf6;">0</div>
-                        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">HARI BEKERJA</div>
-                    </div>
+            <!-- BAHAGIAN KANAN: KAD PANDUAN (FAQ) -->
+            <div class="modal-content guide-card">
+                <div class="guide-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>Panduan Pemahaman Kad Prestasi</h3>
                 </div>
+                
+                <div class="faq-container">
+                    <div class="faq-item">
+                        <h4>1. Apakah fungsi kad ini?</h4>
+                        <p>Ini adalah Kad Prestasi Kehadiran Digital. Ia merumuskan rekod log kehadiran anda secara automatik bermula dari hari pertama sistem digunakan pada tahun ini.</p>
+                    </div>
 
-                <!-- Palang Peratusan -->
-                <div style="background: #f1f5f9; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; margin-bottom: 8px;">
-                    <div id="staff-card-progress-bar" style="background: #22c55e; height: 100%; width: 0%; transition: width 0.5s ease-in-out;"></div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span id="staff-card-date-text" style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">Setakat...</span>
-                    <span id="staff-card-percentage" style="font-size: 1.2rem; font-weight: 800; color: #334155;">0%</span>
+                    <div class="faq-item">
+                        <h4>2. Apakah maksud palang berwarna Hijau/Merah?</h4>
+                        <p>Warna bertindak sebagai penunjuk prestasi visual. <strong style="color:#22c55e;">Hijau</strong> bermaksud peratusan kehadiran anda sangat baik (85% ke atas). <strong style="color:#ef4444;">Merah</strong> bermaksud kehadiran semasa berada di bawah sasaran 85%.</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h4>3. Bagaimana jumlah "Hari Bekerja" sistem ini dikira?</h4>
+                        <p>Sistem ini menggunakan <em>Kiraan Pintar</em>. Sesuatu hari itu hanya dikira sebagai Hari Bekerja rasmi jika sistem mengesan sekurang-kurangnya <strong>10 staf</strong> mengimbas masuk. Ini menjadikan sistem kalis cuti mengejut dan hujung minggu secara automatik!</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h4>4. Kenapa angka Hari Bekerja kecil dan bukan 210 hari setahun?</h4>
+                        <p>Kad ini beroperasi secara <em>Real-Time</em> (Setakat Hari Ini). Angka "Hari Bekerja" akan bertambah secara beransur-ansur dari hari ke hari, dan hanya akan mencapai angka maksimum (spt. 210 hari) tepat pada hujung tahun. Prestasi sentiasa terkini!</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h4>5. Jika saya terlupa imbas 'Keluar' (Clock-Out), terjejaskah peratusan?</h4>
+                        <p><strong>TIDAK TERJEJAS.</strong> Kad ini mengukur 'Hadir' berdasarkan imbasan masuk (Clock-In) sahaja. Asalkan ada satu rekod imbasan pada hari tersebut, sistem mengiktiraf anda sebagai HADIR penuh.</p>
+                    </div>
                 </div>
             </div>
         </div>

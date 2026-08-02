@@ -1216,6 +1216,87 @@ input:checked + .slider:before { transform: translateX(20px); }
     letter-spacing: 0.5px;
 }
 
+/* --- MODAL FLEX WRAPPER (KAD BERKEMBAR) --- */
+.modal-flex-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    align-items: stretch;
+    max-width: 900px;
+    width: 95%;
+    position: relative;
+    /* Reset warna latar supaya background lutsinar memegang 2 kad */
+    background: transparent; 
+}
+
+/* Butang X kelluar di penjuru keseluruhan wrapper */
+.floating-close {
+    position: absolute;
+    top: -40px;
+    right: -10px;
+    color: white;
+    font-size: 2rem;
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+.floating-close:hover { background: #ef4444; transform: scale(1.1); }
+
+/* --- GAYA KAD PANDUAN (FAQ) --- */
+.guide-card {
+    background: #f8fafc;
+    max-width: 450px;
+    border-left: 5px solid #8b5cf6; /* Jalur warna tema Guru */
+    display: flex;
+    flex-direction: column;
+}
+
+.guide-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px dashed #cbd5e0;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    color: #475569;
+}
+.guide-header i { font-size: 1.5rem; color: #8b5cf6; }
+.guide-header h3 { font-size: 1.1rem; margin: 0; font-weight: 700; }
+
+.faq-container {
+    overflow-y: auto;
+    padding-right: 10px;
+    max-height: 400px; /* Boleh discroll jika terlalu panjang */
+}
+.faq-container::-webkit-scrollbar { width: 6px; }
+.faq-container::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+
+.faq-item {
+    margin-bottom: 15px;
+    background: white;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.faq-item h4 {
+    font-size: 0.85rem;
+    color: #1e293b;
+    margin: 0 0 5px 0;
+    font-weight: 700;
+}
+.faq-item p {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+}
+
 /* =========================================
    MOBILE RESPONSIVENESS (SMARTPHONE VIEW)
    DIKEMASKINI: Profil & Tarikh Di Atas
@@ -1418,6 +1499,21 @@ input:checked + .slider:before { transform: translateX(20px); }
         text-align: center;
         padding: 10px;
         font-size: 0.85rem;
+    }
+
+    /* Tambahan dalam @media sedia ada: Susun tindih kad modal */
+    .modal-flex-wrapper {
+        flex-direction: column !important;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding-top: 40px; /* Ruang untuk butang tutup */
+    }
+    .guide-card {
+        max-width: 100% !important;
+    }
+    .floating-close {
+        top: 0px;
+        right: 0px;
     }
 }
 
