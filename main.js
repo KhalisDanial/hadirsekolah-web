@@ -1966,7 +1966,6 @@ window.openStudentCard = async (studentId) => {
         }
 
         // --- 2. DAPATKAN TARIKH IMBASAN MURID INI SAHAJA ---
-        // (Tidak perlukan pagination kerana murid takkan hadir lebih 1000 hari setahun)
         const { data: studentRecords, error: err1 } = await supabase
             .from('students_attendance')
             .select('date')
@@ -1976,13 +1975,20 @@ window.openStudentCard = async (studentId) => {
         if (err1) throw err1;
 
         let attendCount = 0;
+        let absentDates = []; // Array baharu untuk simpan tarikh tidak hadir
 
         if (studentRecords) {
             const uniqueStudentDates = new Set(studentRecords.map(d => d.date));
 
-            uniqueStudentDates.forEach(date => {
-                if (officialSchoolDates.has(date)) {
-                    attendCount++;
+            // Tukar Set 'officialSchoolDates' kepada Array supaya boleh diisih (sort)
+            // Kita isih dari tarikh terbaru ke tarikh paling lama (descending)
+            const sortedOfficialDates = Array.from(officialSchoolDates).sort((a, b) => new Date(b) - new Date(a));
+
+            sortedOfficialDates.forEach(date => {
+                if (uniqueStudentDates.has(date)) {
+                    attendCount++; // Murid hadir
+                } else {
+                    absentDates.push(date); // Tarikh sekolah ada, murid tiada (PONTENG)
                 }
             });
         }
@@ -1993,7 +1999,7 @@ window.openStudentCard = async (studentId) => {
             percentage = Math.round((attendCount / totalSchoolDays) * 100);
         }
 
-        // --- 4. KEMAS KINI ANTARAMUKA ---
+        // --- 4. KEMAS KINI ANTARAMUKA & SENARAI TIDAK HADIR ---
         id('card-attend-days').innerText = attendCount;
         id('card-total-days').innerText = totalSchoolDays;
         id('card-percentage').innerText = `${percentage}%`;
@@ -2012,6 +2018,38 @@ window.openStudentCard = async (studentId) => {
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         const todayStr = new Date().toLocaleDateString('ms-MY', options);
         id('card-date-text').innerText = `Setakat ${todayStr}`;
+
+        // --- 5. PAPARKAN REKOD TIDAK HADIR KE DALAM HTML ---
+        const absentListContainer = id('card-absent-list');
+        if (absentListContainer) {
+            if (absentDates.length === 0) {
+                // Beri pujian jika murid tidak pernah ponteng
+                absentListContainer.innerHTML = '<div style="color: #22c55e; font-weight: 700; text-align: center; padding: 10px 0;"><i class="fas fa-star"></i> Kehadiran Sempurna!</div>';
+                absentListContainer.style.background = '#f0fdf4';
+                absentListContainer.style.borderColor = '#bbf7d0';
+            } else {
+                // Paparkan senarai tarikh ponteng (berwarna merah)
+                const daysMy = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+                const monthsMy = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+
+                const listHtml = absentDates.map(dStr => {
+                    const dObj = new Date(dStr);
+                    const dayName = daysMy[dObj.getDay()];
+                    const dayNum = String(dObj.getDate()).padStart(2, '0');
+                    const monthName = monthsMy[dObj.getMonth()];
+                    const year = dObj.getFullYear();
+                    
+                    return `<div style="padding: 6px 0; border-bottom: 1px solid #fecaca; display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fas fa-calendar-times" style="margin-right:5px; opacity: 0.7;"></i> ${dayName}</span>
+                                <strong>${dayNum} ${monthName} ${year}</strong>
+                            </div>`;
+                }).join('');
+
+                absentListContainer.innerHTML = listHtml;
+                absentListContainer.style.background = '#fff5f5';
+                absentListContainer.style.borderColor = '#fee2e2';
+            }
+        }
 
     } catch (error) {
         console.error("Ralat memuat turun statistik murid:", error);
