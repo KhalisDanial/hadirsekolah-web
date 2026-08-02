@@ -2020,6 +2020,15 @@ window.openStudentCard = async (studentId) => {
         id('card-date-text').innerText = `Setakat ${todayStr}`;
 
         // --- 5. PAPARKAN REKOD TIDAK HADIR KE DALAM HTML ---
+        
+        // Simpan data ke memori global supaya butang PDF/CSV boleh akses
+        window.currentStudentAbsentData = {
+            name: student.name,
+            class: student.class_name_full,
+            barcode: student.barcode,
+            dates: absentDates
+        };
+
         const absentListContainer = id('card-absent-list');
         if (absentListContainer) {
             if (absentDates.length === 0) {
@@ -2196,4 +2205,77 @@ window.openStaffCard = async (staffId) => {
 
 window.closeStaffCard = () => {
     id('staff-card-modal')?.classList.add('hidden');
+};
+
+// ==========================================
+// --- FUNGSI EKSPORT REKOD TIDAK HADIR MURID ---
+// ==========================================
+
+window.exportStudentAbsentCSV = () => {
+    const data = window.currentStudentAbsentData;
+    if (!data || !data.dates || data.dates.length === 0) {
+        return alert("Murid ini mempunyai rekod kehadiran yang sempurna. Tiada rekod ponteng untuk dieksport.");
+    }
+
+    const headers = ["Bil.", "Tarikh", "Hari", "Nama Murid", "Kelas"];
+    const daysMy = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+    
+    // Susun barisan data
+    const rows = data.dates.map((dStr, idx) => {
+        const dObj = new Date(dStr);
+        const dayName = daysMy[dObj.getDay()];
+        return [idx + 1, dStr, dayName, data.name, data.class];
+    });
+
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF" // \uFEFF membolehkan Excel baca format aksara dengan baik
+        + [headers, ...rows].map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    // Buat nama fail cantik secara automatik (Cth: Rekod_Tidak_Hadir_Ahmad.csv)
+    link.setAttribute("download", `Rekod_Tidak_Hadir_${data.name.replace(/\s+/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+window.exportStudentAbsentPDF = () => {
+    const data = window.currentStudentAbsentData;
+    if (!data || !data.dates || data.dates.length === 0) {
+        return alert("Murid ini mempunyai rekod kehadiran yang sempurna. Tiada rekod ponteng untuk dieksport.");
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Tajuk Laporan
+    doc.setFontSize(16);
+    doc.text(`Laporan Rekod Tidak Hadir (Ponteng)`, 14, 15);
+    
+    // Maklumat Murid
+    doc.setFontSize(11);
+    doc.text(`Nama: ${data.name}`, 14, 25);
+    doc.text(`Kelas: ${data.class}`, 14, 31);
+    doc.text(`Tarikh Janaan: ${new Date().toLocaleDateString('ms-MY')}`, 14, 37);
+
+    // Tukar format tarikh kepada senarai baris
+    const daysMy = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+    const body = data.dates.map((dStr, idx) => {
+        const dObj = new Date(dStr);
+        const dayName = daysMy[dObj.getDay()];
+        return [idx + 1, dStr, dayName];
+    });
+
+    // Jadual menggunakan jsPDF AutoTable
+    doc.autoTable({
+        startY: 45,
+        head: [['Bil.', 'Tarikh', 'Hari']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [239, 68, 68] }, // Warna tema header jadual merah (Amaran)
+        styles: { fontSize: 10 }
+    });
+
+    doc.save(`Rekod_Tidak_Hadir_${data.name.replace(/\s+/g, '_')}.pdf`);
 };
