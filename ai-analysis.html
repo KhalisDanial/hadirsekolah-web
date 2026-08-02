@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body style="background-color: #f8fafc;">
 
@@ -106,18 +107,40 @@
                             <th>Nama Murid</th>
                             <th>Kelas</th>
                             <th>Skor Risiko AI</th>
-                            <th>Corak Utama Ditangkap AI</th>
+                            <th>Corak Utama</th>
                             <th>Status Cadangan Tindakan</th>
+                            <th>Tindakan</th> <!-- LAJUR BAHARU -->
                         </tr>
                     </thead>
                     <tbody id="ai-table-body">
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">
-                                <i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Sistem AI sedang menganalisis corak kehadiran pangkalan data...
+                            <td colspan="7" style="text-align: center; padding: 2rem; color: #64748b;">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Sistem AI sedang menganalisis corak...
                             </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- MODAL GRAF PRESTASI (SIRI MASA) -->
+            <div id="ai-chart-modal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
+                <div style="background: white; width: 100%; max-width: 700px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); position: relative; animation: slideIn 0.3s ease-out forwards;">
+                    <!-- Butang Tutup -->
+                    <button onclick="document.getElementById('ai-chart-modal').style.display='none'" style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 1.5rem; color: #64748b; cursor: pointer;">&times;</button>
+                    
+                    <div style="padding: 20px 25px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                        <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-chart-area" style="color: #3b82f6;"></i> Sejarah Prestasi Bulanan</h3>
+                        <p id="ai-chart-student-name" style="margin: 5px 0 0 0; font-size: 0.9rem; color: #64748b; font-weight: bold;">Nama Murid</p>
+                    </div>
+                    
+                    <!-- Ruang Kanvas Graf -->
+                    <div style="padding: 20px; height: 300px; position: relative;">
+                        <canvas id="studentPerformanceChart"></canvas>
+                    </div>
+                    <div style="padding: 10px 20px 20px; font-size: 0.8rem; color: #94a3b8; text-align: center;">
+                        *Graf ini membandingkan kekerapan Tidak Hadir dan Lewat bagi setiap bulan persekolahan yang mempunyai data.
+                    </div>
+                </div>
             </div>
         </div>
 

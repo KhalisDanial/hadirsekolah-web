@@ -81,6 +81,9 @@ async function runAIPredictiveEngine() {
         if (dateCounts[d] >= 50) officialDates.add(d);
     }
     const totalSchoolDays = officialDates.size;
+    // --- SIMPAN KE MEMORI GLOBAL UNTUK CARTA ---
+    window.globalAllAttendance = allAttendance;
+    window.globalOfficialDates = officialDates;
 
     // D. Pengiraan Skor Risiko bagi Setiap Murid (Machine Learning Rules Engine)
     analyzedRiskData = students.map(s => {
@@ -252,6 +255,11 @@ window.renderAITableOnly = () => {
                 </td>
                 <td>${patternTag}</td>
                 <td><span style="font-size:0.85rem; ${recommendationStyle}">${item.aiRecommendation}</span></td>
+                <td>
+                    <button onclick="window.openStudentChart('${item.id}', '${item.name.replace(/'/g, "\\'")}')" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+                        <i class="fas fa-chart-line"></i> Graf
+                    </button>
+                </td>
             </tr>
         `;
     });
@@ -292,4 +300,109 @@ window.exportAIReportPDF = () => {
     });
 
     doc.save(`Laporan_AI_Risiko_Ponteng_${new Date().toISOString().split('T')[0]}.pdf`);
+};
+
+// ==========================================
+// --- FUNGSI JANAAN GRAF PRESTASI BULANAN ---
+// ==========================================
+let performanceChart = null; // Pembolehubah global untuk memadam graf lama
+
+window.openStudentChart = (studentId, studentName) => {
+    // 1. Paparkan Modal
+    const modal = document.getElementById('ai-chart-modal');
+    document.getElementById('ai-chart-student-name').innerText = studentName;
+    modal.style.display = 'flex';
+
+    // 2. Tarik Data Global
+    const scans = window.globalAllAttendance.filter(a => a.student_id === studentId);
+    const scanDates = new Set(scans.map(a => a.date));
+
+    // 3. Susun Tarikh Mengikut Bulan (Jan - Dis)
+    const monthsMy = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+    const monthlyData = {};
+    for (let i = 0; i < 12; i++) {
+        monthlyData[i] = { schoolDays: 0, absent: 0, late: 0 };
+    }
+
+    // Kira Kehadiran & Kelewatan berdasarkan Kalendar Sekolah Rasmi
+    window.globalOfficialDates.forEach(dateStr => {
+        const dObj = new Date(dateStr);
+        const monthIdx = dObj.getMonth();
+        
+        monthlyData[monthIdx].schoolDays++;
+
+        if (!scanDates.has(dateStr)) {
+            monthlyData[monthIdx].absent++; // Murid Tidak Hadir
+        } else {
+            // Check jika lewat (Selepas 07:30)
+            const scanRecord = scans.find(s => s.date === dateStr);
+            if (scanRecord && scanRecord.timestamp) {
+                const st = new Date(scanRecord.timestamp);
+                const totalMins = (st.getHours() * 60) + st.getMinutes();
+                if (totalMins > (7 * 60 + 30)) {
+                    monthlyData[monthIdx].late++;
+                }
+            }
+        }
+    });
+
+    // 4. Siapkan Data untuk Chart.js (Hanya buang bulan yang tiada sekolah langsung)
+    const chartLabels = [];
+    const absentDataset = [];
+    const lateDataset = [];
+
+    for (let i = 0; i < 12; i++) {
+        if (monthlyData[i].schoolDays > 0) {
+            chartLabels.push(monthsMy[i]);
+            absentDataset.push(monthlyData[i].absent);
+            lateDataset.push(monthlyData[i].late);
+        }
+    }
+
+    // 5. Bina Graf Menggunakan Chart.js
+    const ctx = document.getElementById('studentPerformanceChart').getContext('2d');
+    
+    // Padam graf lama jika ada (supaya tidak overlap bila tekan murid lain)
+    if (performanceChart) {
+        performanceChart.destroy();
+    }
+
+    performanceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [
+                {
+                    label: 'Tidak Hadir (Hari)',
+                    data: absentDataset,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)', // Merah
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                },
+                {
+                    label: 'Kerap Lewat (Kali)',
+                    data: lateDataset,
+                    backgroundColor: 'rgba(245, 158, 11, 0.7)', // Kuning/Oren
+                    borderColor: 'rgb(245, 158, 11)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 }, // Hanya nombor bulat (takkan ada 1.5 hari ponteng)
+                    title: { display: true, text: 'Jumlah Kekerapan' }
+                }
+            },
+            plugins: {
+                legend: { position: 'top' }
+            }
+        }
+    });
 };
