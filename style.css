@@ -1411,9 +1411,37 @@ input:checked + .slider:before { transform: translateX(20px); }
     .export-group { display: flex; width: 100%; gap: 10px; margin-top: 5px; }
     .btn-pdf, .btn-csv { flex: 1; justify-content: center; padding: 8px; font-size: 0.85rem; }
     
-    /* 7. MODAL KAD PROFIL */
-    .modal-content { max-width: 90% !important; padding: 0 !important; }
+    /* 7. MODAL KAD PROFIL & FAQ BERKEMBAR */
+    .modal-content { max-width: 95% !important; padding: 0 !important; }
     #data-modal .modal-content { padding: 1.5rem !important; max-height: 90vh; overflow-y: auto; }
+
+    /* Susun tindih kad modal (Atas-Bawah) */
+    .modal-flex-wrapper {
+        flex-direction: column !important;
+        max-height: 85vh; /* Hadkan tinggi supaya boleh diskrol */
+        overflow-y: auto; /* Aktifkan fungsi skrol */
+        padding-top: 45px; /* Ruang yang cukup untuk butang X */
+        align-items: center; 
+        gap: 20px;
+        width: 100%;
+    }
+    
+    /* INI KOD YANG TERTINGGAL: Halang kad daripada dipenyekkan! */
+    .modal-flex-wrapper .modal-content {
+        flex-shrink: 0 !important; 
+        width: 100% !important;
+    }
+    
+    .guide-card {
+        max-width: 100% !important;
+        margin-bottom: 20px; /* Beri ruang kosong di bawah sekali bila diskrol habis */
+    }
+    
+    .floating-close {
+        top: 0px;
+        right: 5px;
+        z-index: 50; /* Pastikan butang X sentiasa timbul di atas */
+    }
 
     /* =========================================
        8. PENGURUSAN DATA (Filter & Butang Tindakan)
@@ -1500,22 +1528,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         padding: 10px;
         font-size: 0.85rem;
     }
-
-    /* Tambahan dalam @media sedia ada: Susun tindih kad modal */
-    .modal-flex-wrapper {
-        flex-direction: column !important;
-        max-height: 90vh;
-        overflow-y: auto;
-        padding-top: 40px; /* Ruang untuk butang tutup */
-    }
-    .guide-card {
-        max-width: 100% !important;
-    }
-    .floating-close {
-        top: 0px;
-        right: 0px;
-    }
-}
+} 
 
 @media (max-width: 380px) {
     .date-input { width: 120px; }
