@@ -6,7 +6,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 let currentSchoolId = null;
-let currentAIView = 'murid'; // Pembolehubah untuk kawal paparan aktif ('murid' atau 'staf')
+let currentAIView = 'murid'; 
 
 let analyzedStudentData = [];
 let analyzedStaffData = [];
@@ -37,7 +37,7 @@ async function runAIPredictiveEngine() {
     const currentYear = new Date().getFullYear();
     const startDate = `${currentYear}-01-01`;
 
-    // --- FUNGSI PEMBANTU (HELPER) UNTUK MENGIRA DATA TANPA MENGULANG KOD ---
+    // --- FUNGSI PEMBANTU UNTUK MENGIRA DATA (DIBETULKAN UNTUK TEACHERS) ---
     async function processAIEngine(tableName, attendanceTableName, attendanceThreshold) {
         const { data: users } = await supabase.from(tableName).select('*').eq('school_id', currentSchoolId);
         if (!users || users.length === 0) return { analyzed: [], allAtt: [], offDates: new Set() };
@@ -73,8 +73,8 @@ async function runAIPredictiveEngine() {
         const totalWorkingDays = offDates.size;
 
         const analyzed = users.map(u => {
-            // Sokong padanan student_id ATAU staff_id dengan String() conversion
-            const userScans = allAtt.filter(a => String(a.student_id || a.staff_id) === String(u.id) && offDates.has(a.date));
+            // PEMBETULAN KUNCI ASING: Gunakan teacher_id
+            const userScans = allAtt.filter(a => String(a.student_id || a.teacher_id) === String(u.id) && offDates.has(a.date));
             const attendedDates = new Set(userScans.map(a => a.date));
             
             const attendCount = attendedDates.size;
@@ -96,11 +96,18 @@ async function runAIPredictiveEngine() {
 
             let lateCount = 0;
             userScans.forEach(sc => {
-                if (sc.timestamp) {
-                    const scanTime = new Date(sc.timestamp);
-                    const totalMins = (scanTime.getHours() * 60) + scanTime.getMinutes();
-                    if (totalMins > (7 * 60 + 30)) lateCount++; // Lewat lepas 07:30
+                let totalMins = 0;
+                // PEMBETULAN PENGIRAAN LEWAT: Guna clock_in jika ada, jika tiada guna timestamp
+                if (sc.clock_in) {
+                    const [h, m] = sc.clock_in.split(':').map(Number);
+                    totalMins = (h * 60) + m;
+                } else if (sc.timestamp) {
+                    // Berjaga-jaga jika timestamp adalah format nombor '1778197363963'
+                    const st = !isNaN(sc.timestamp) ? new Date(Number(sc.timestamp)) : new Date(sc.timestamp);
+                    totalMins = (st.getHours() * 60) + st.getMinutes();
                 }
+                
+                if (totalMins > (7 * 60 + 30)) lateCount++; // Lewat lepas 07:30
             });
 
             let riskScore = 0;
@@ -110,7 +117,7 @@ async function runAIPredictiveEngine() {
             if (attendCount === 0 && totalWorkingDays > 0) {
                 riskScore = 100;
                 riskCategory = 'GHOST';
-                aiRecommendation = tableName === 'students' ? 'KRITIKAL: Siasat Status Pindah / Kod Bar Rosak' : 'KRITIKAL: Semak Status Staf (Pindah/Cuti Panjang)';
+                aiRecommendation = tableName === 'students' ? 'KRITIKAL: Siasat Status Pindah / Kod Bar Rosak' : 'KRITIKAL: Semak Status Guru (Pindah/Cuti Panjang)';
             } else {
                 const absentRate = totalWorkingDays > 0 ? (absentCount / totalWorkingDays) : 0;
                 riskScore += Math.min(60, Math.round(absentRate * 100 * 1.5));
@@ -123,10 +130,10 @@ async function runAIPredictiveEngine() {
 
                 if (riskScore >= 50 || absentCount >= 5) {
                     riskCategory = 'HIGH';
-                    aiRecommendation = tableName === 'students' ? 'Syor: Sesi Kaunseling & Surat Amaran Pertama' : 'Syor: Surat Tunjuk Sebab (Tatatertib)';
+                    aiRecommendation = tableName === 'students' ? 'Syor: Sesi Kaunseling & Surat Amaran Pertama' : 'Syor: Surat Tunjuk Sebab / Teguran Pengetua';
                 } else if (riskScore >= 25 || absentCount >= 3 || lateCount >= 3) {
                     riskCategory = 'MEDIUM';
-                    aiRecommendation = tableName === 'students' ? 'Syor: Panggilan Mesra Ibu Bapa / Peringatan' : 'Syor: Teguran Lisan Pengetua/Guru Besar';
+                    aiRecommendation = tableName === 'students' ? 'Syor: Panggilan Mesra Ibu Bapa / Peringatan' : 'Syor: Semakan Teguran Disiplin (Lisan)';
                 }
             }
 
@@ -143,8 +150,10 @@ async function runAIPredictiveEngine() {
     window.globalAllAttendance = studentData.allAtt;
     window.globalOfficialDates = studentData.offDates;
 
-    // B. Proses Data Staf (Ambang 10 Hari Bekerja)
-    const staffData = await processAIEngine('staff', 'staff_attendance', 10);
+    // B. Proses Data Guru/AKP (DIBETULKAN NAMA JADUAL)
+    // Nota: Saya menganggap jadual profil guru anda bernama 'teachers'. 
+    // Jika ia bernama lain (cth: 'teacher'), sila tukar 'teachers' di bawah kepada 'teacher'.
+    const staffData = await processAIEngine('teachers', 'teacher_attendance', 10);
     analyzedStaffData = staffData.analyzed;
     window.globalAllStaffAttendance = staffData.allAtt;
     window.globalOfficialStaffDates = staffData.offDates;
@@ -159,7 +168,6 @@ window.switchAIView = (view) => {
     const btnStaf = id('btn-view-staf');
     const searchInput = id('ai-search-input');
     
-    // Reset carian bila tukar tab
     if (searchInput) searchInput.value = '';
 
     if (view === 'murid') {
@@ -178,7 +186,6 @@ window.switchAIView = (view) => {
 };
 
 function renderAIDashboardUI() {
-    // Pilih sumber data berdasarkan paparan aktif
     const activeData = currentAIView === 'murid' ? analyzedStudentData : analyzedStaffData;
 
     const ghostRisk = activeData.filter(d => d.riskCategory === 'GHOST');
@@ -231,7 +238,9 @@ window.renderAITableOnly = () => {
                 : (item.lateCount >= 3 ? `<span style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold;">Kerap Lewat (${item.lateCount}x)</span>` : '<span style="color:#94a3b8;">Normal</span>'));
 
         const recommendationStyle = item.riskCategory === 'GHOST' ? 'color:#ef4444; font-weight: 800;' : 'color:#334155; font-weight: 600;';
-        const displayRole = currentAIView === 'murid' ? (item.class_name_full || '-') : (item.role || '-');
+        
+        // Memandangkan ini table teachers, mungkin tiada 'class_name_full' tapi ada 'role' atau 'jawatan'
+        const displayRole = currentAIView === 'murid' ? (item.class_name_full || '-') : (item.role || item.jawatan || '-');
 
         rowsHtml += `
             <tr>
@@ -264,7 +273,7 @@ window.renderAITableOnly = () => {
     tbody.innerHTML = rowsHtml;
 };
 
-// 5. Eksport Laporan PDF Mengikut Kumpulan (Murid/Staf)
+// 5. Eksport Laporan PDF
 window.exportAIReportPDF = () => {
     const activeData = currentAIView === 'murid' ? analyzedStudentData : analyzedStaffData;
     if (!activeData || activeData.length === 0) return alert("Tiada data analisis AI untuk dieksport.");
@@ -282,7 +291,7 @@ window.exportAIReportPDF = () => {
     const body = highRiskOnly.map((d, idx) => [
         idx + 1,
         d.name,
-        currentAIView === 'murid' ? (d.class_name_full || '-') : (d.role || '-'),
+        currentAIView === 'murid' ? (d.class_name_full || '-') : (d.role || d.jawatan || '-'),
         `${d.riskScore}% (${d.riskCategory})\nTidak Hadir: ${d.absentCount} Hari`,
         d.dominantDayPattern || (d.lateCount >= 3 ? `Kerap Lewat (${d.lateCount}x)` : 'Tiada Corak Khusus'),
         d.aiRecommendation
@@ -308,11 +317,11 @@ window.openStudentChart = (userId, userName) => {
     document.getElementById('ai-chart-student-name').innerText = userName;
     modal.style.display = 'flex';
 
-    // Pilih data pangkalan yang betul berdasarkan tab aktif
     const activeScans = currentAIView === 'murid' ? window.globalAllAttendance : window.globalAllStaffAttendance;
     const activeDates = currentAIView === 'murid' ? window.globalOfficialDates : window.globalOfficialStaffDates;
 
-    const scans = activeScans.filter(a => String(a.student_id || a.staff_id) === String(userId));
+    // PEMBETULAN KUNCI ASING: Gunakan teacher_id
+    const scans = activeScans.filter(a => String(a.student_id || a.teacher_id) === String(userId));
     const scanDates = new Set(scans.map(a => a.date));
 
     const monthsMy = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
@@ -331,9 +340,17 @@ window.openStudentChart = (userId, userName) => {
             monthlyData[monthIdx].absent++; 
         } else {
             const scanRecord = scans.find(s => s.date === dateStr);
-            if (scanRecord && scanRecord.timestamp) {
-                const st = new Date(scanRecord.timestamp);
-                const totalMins = (st.getHours() * 60) + st.getMinutes();
+            if (scanRecord) {
+                let totalMins = 0;
+                // PEMBETULAN PENGIRAAN LEWAT UNTUK GRAF:
+                if (scanRecord.clock_in) {
+                    const [h, m] = scanRecord.clock_in.split(':').map(Number);
+                    totalMins = (h * 60) + m;
+                } else if (scanRecord.timestamp) {
+                    const st = !isNaN(scanRecord.timestamp) ? new Date(Number(scanRecord.timestamp)) : new Date(scanRecord.timestamp);
+                    totalMins = (st.getHours() * 60) + st.getMinutes();
+                }
+
                 if (totalMins > (7 * 60 + 30)) {
                     monthlyData[monthIdx].late++;
                 }
