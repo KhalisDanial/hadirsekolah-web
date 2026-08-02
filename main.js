@@ -310,24 +310,48 @@ async function initializeDashboard(userId) {
     if (id('admin-name')) id('admin-name').innerText = profile.full_name || "Admin";
     if (id('admin-role')) id('admin-role').innerText = profile.role || "Penyelaras";
 
-    // 4. Date Picker Logic
+    // 4. Date Picker Logic & Day Display
     const datePicker = id('date-picker');
-    const todayISO = getLocalTodayISO(); // <-- Use local helper instead of toISOString()
+    const todayISO = getLocalTodayISO(); 
+
+    const updateDayDisplay = () => {
+        if (!datePicker || !datePicker.value) return;
+        const d = new Date(datePicker.value);
+        const days = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+        const dayDisplay = id('date-day-display');
+        if (dayDisplay) dayDisplay.innerText = days[d.getDay()];
+    };
 
     if (datePicker) {
         datePicker.value = todayISO;
+        updateDayDisplay(); // Papar nama hari masa mula-mula buka
         datePicker.onchange = () => {
+            updateDayDisplay(); // Tukar nama hari jika tarikh bertukar
             fetchMuridAttendance();
             if (typeof loadGuruData === 'function') loadGuruData();
         };
     }
 
+    // Fungsi global untuk anjak tarikh (Kiri/Kanan)
+    window.shiftDate = (daysToAdd) => {
+        if (!datePicker) return;
+        const current = new Date(datePicker.value);
+        current.setDate(current.getDate() + daysToAdd);
+        
+        // Format semula ke YYYY-MM-DD
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, '0');
+        const day = String(current.getDate()).padStart(2, '0');
+        
+        datePicker.value = `${year}-${month}-${day}`;
+        datePicker.dispatchEvent(new Event('change')); // Paksa sistem kemas kini jadual
+    };
+
     if (id('btn-today')) {
         id('btn-today').onclick = () => {
             if (datePicker && datePicker.value !== todayISO) {
                 datePicker.value = todayISO;
-                fetchMuridAttendance();
-                if (typeof loadGuruData === 'function') loadGuruData();
+                datePicker.dispatchEvent(new Event('change'));
             }
         };
     }

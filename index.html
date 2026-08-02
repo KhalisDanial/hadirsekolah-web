@@ -42,9 +42,19 @@
             <header class="top-bar">
                 <!-- Bahagian Tarikh (Kiri) -->
                 <div class="global-filters">
-                    <div class="date-control">
-                        <label for="date-picker"><i class="fas fa-calendar-day"></i> Tarikh:</label>
+                    <div class="date-control" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn-date-nav" onclick="shiftDate(-1)" title="Hari Sebelumnya">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        
                         <input type="date" id="date-picker" class="date-input">
+                        
+                        <button type="button" class="btn-date-nav" onclick="shiftDate(1)" title="Hari Seterusnya">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+
+                        <span id="date-day-display" class="day-display-text">Hari...</span>
+
                         <button id="btn-today" class="btn-today">
                             <i class="fas fa-history"></i> Hari Ini
                         </button>
